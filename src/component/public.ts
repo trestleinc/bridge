@@ -561,6 +561,7 @@ const _deliverableEvaluate = mutation({
       deliverableId: string;
       ready: boolean;
       missingCards: string[];
+      missingPrerequisites: string[];
       evaluationId?: string;
     }> = [];
 
@@ -580,13 +581,38 @@ const _deliverableEvaluate = mutation({
         if (!relevant) continue;
       }
 
-      const missing: string[] = [];
+      // Check required cards
+      const missingCards: string[] = [];
       for (const slug of d.requiredCards) {
         const val = args.variables?.[slug];
-        if (val === undefined || val === null || val === '') missing.push(slug);
+        if (val === undefined || val === null || val === '') missingCards.push(slug);
       }
 
-      if (missing.length === 0) {
+      // Check prerequisites - look for completed evaluations for this subject
+      const missingPrerequisites: string[] = [];
+      if (d.prerequisites?.length) {
+        for (const prereq of d.prerequisites) {
+          // Find a completed evaluation for this prerequisite deliverable and subject
+          const completedEval = await ctx.db
+            .query('evaluations')
+            .withIndex('by_deliverable', (q) => q.eq('deliverableId', prereq.deliverableId))
+            .filter((q) =>
+              q.and(
+                q.eq(q.field('context.subjectId'), args.subjectId),
+                q.eq(q.field('status'), 'completed')
+              )
+            )
+            .first();
+
+          if (!completedEval) {
+            missingPrerequisites.push(prereq.deliverableId);
+          }
+        }
+      }
+
+      const ready = missingCards.length === 0 && missingPrerequisites.length === 0;
+
+      if (ready) {
         const evalId = crypto.randomUUID();
         const scheduled = scheduleTime(d.conditions);
         await ctx.db.insert('evaluations', {
@@ -604,9 +630,20 @@ const _deliverableEvaluate = mutation({
           createdAt: Date.now(),
         });
         logger.info('Evaluation created', { evalId, deliverableId: d.id });
-        results.push({ deliverableId: d.id, ready: true, missingCards: [], evaluationId: evalId });
+        results.push({
+          deliverableId: d.id,
+          ready: true,
+          missingCards: [],
+          missingPrerequisites: [],
+          evaluationId: evalId,
+        });
       } else {
-        results.push({ deliverableId: d.id, ready: false, missingCards: missing });
+        results.push({
+          deliverableId: d.id,
+          ready: false,
+          missingCards,
+          missingPrerequisites,
+        });
       }
     }
     return results;

@@ -211,6 +211,7 @@ export interface DeliverableReadiness {
   deliverableId: string;
   ready: boolean;
   missingCards: string[];
+  missingPrerequisites: string[];
   evaluationId?: string;
 }
 
@@ -304,11 +305,12 @@ export type CallbackHandler = (
 
 /**
  * Input for triggering deliverable evaluation.
+ * If `variables` is omitted and subjects are bound, Bridge will auto-resolve from the bound table.
  */
 export interface EvaluateTrigger {
   organizationId: string;
   subjectType: SubjectType;
   subjectId: string;
-  variables: Record<string, unknown>;
+  variables?: Record<string, unknown>;
   changedFields?: string[];
 }
