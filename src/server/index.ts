@@ -5,4 +5,3 @@
  */
 
 export { bridge } from '$/server/builder.js';
-export type { BridgeConfig, BridgeHooks } from '$/server/builder.js';
