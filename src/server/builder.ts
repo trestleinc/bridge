@@ -17,55 +17,58 @@ import type {
   ExecutionContext,
   ExecutionResult,
   CallbackHandler,
+  SubjectType,
 } from '$/shared/types.js';
 
 // ============================================================================
-// Hooks Interface
+// Configuration Interface
 // ============================================================================
 
 /**
- * Hooks for authorization and side effects.
- */
-export interface BridgeHooks {
-  /** Called before read operations for authorization */
-  evalRead?: (
-    ctx: GenericQueryCtx<GenericDataModel>,
-    organizationId: string
-  ) => void | Promise<void>;
-
-  /** Called before write operations for authorization */
-  evalWrite?: (
-    ctx: GenericMutationCtx<GenericDataModel>,
-    organizationId: string
-  ) => void | Promise<void>;
-
-  /** Called after a card is created */
-  onCardCreated?: (ctx: GenericMutationCtx<GenericDataModel>, card: Card) => void | Promise<void>;
-
-  /** Called after a procedure is created */
-  onProcedureCreated?: (
-    ctx: GenericMutationCtx<GenericDataModel>,
-    procedure: Procedure
-  ) => void | Promise<void>;
-
-  /** Called when a deliverable becomes ready and creates an evaluation */
-  onDeliverableTriggered?: (
-    ctx: GenericMutationCtx<GenericDataModel>,
-    evaluation: Evaluation
-  ) => void | Promise<void>;
-
-  /** Called when an evaluation completes */
-  onEvaluationCompleted?: (
-    ctx: GenericMutationCtx<GenericDataModel>,
-    evaluation: Evaluation
-  ) => void | Promise<void>;
-}
-
-/**
  * Configuration for the bridge instance.
+ * Hooks use verb-based naming with entity namespacing.
  */
-export interface BridgeConfig {
-  hooks?: BridgeHooks;
+export interface Config {
+  /** Map subject types to host table names for automatic context resolution */
+  subjects?: Partial<Record<SubjectType, string>>;
+  hooks?: {
+    /** Called before read operations for authorization */
+    read?: (ctx: GenericQueryCtx<GenericDataModel>, organizationId: string) => void | Promise<void>;
+    /** Called before write operations for authorization */
+    write?: (
+      ctx: GenericMutationCtx<GenericDataModel>,
+      organizationId: string
+    ) => void | Promise<void>;
+    /** Card lifecycle hooks */
+    card?: {
+      /** Called after a card is created */
+      insert?: (ctx: GenericMutationCtx<GenericDataModel>, card: Card) => void | Promise<void>;
+    };
+    /** Procedure lifecycle hooks */
+    procedure?: {
+      /** Called after a procedure is created */
+      insert?: (
+        ctx: GenericMutationCtx<GenericDataModel>,
+        procedure: Procedure
+      ) => void | Promise<void>;
+    };
+    /** Deliverable lifecycle hooks */
+    deliverable?: {
+      /** Called when a deliverable becomes ready and creates an evaluation */
+      trigger?: (
+        ctx: GenericMutationCtx<GenericDataModel>,
+        evaluation: Evaluation
+      ) => void | Promise<void>;
+    };
+    /** Evaluation lifecycle hooks */
+    evaluation?: {
+      /** Called when an evaluation completes */
+      complete?: (
+        ctx: GenericMutationCtx<GenericDataModel>,
+        evaluation: Evaluation
+      ) => void | Promise<void>;
+    };
+  };
 }
 
 // ============================================================================
@@ -76,24 +79,14 @@ export interface BridgeConfig {
  * Create a bridge instance bound to your component.
  *
  * @example
- * ```typescript
  * // convex/bridge.ts
- * import { bridge } from '@trestleinc/bridge/server';
- * import { components } from './_generated/api';
- *
- * export const b = bridge(components.bridge)({
- *   hooks: { evalRead: ..., evalWrite: ... }
+ * const b = bridge(components.bridge)({
+ *   subjects: { beneficiary: 'beneficiaries' },
+ *   hooks: { read: authCheck, card: { insert: onInsert } },
  * });
- *
- * // Register callbacks
- * b.register('automation', async (deliverable, ctx) => { ... });
- *
- * // Use in mutations
- * await b.submit(ctx, { procedureId, subjectId, values });
- * ```
  */
 export function bridge(component: any) {
-  return function boundBridge(config?: BridgeConfig) {
+  return function boundBridge(config?: Config) {
     return bridgeInternal(component, config);
   };
 }
@@ -101,9 +94,44 @@ export function bridge(component: any) {
 /**
  * Internal implementation for bridge.
  */
-function bridgeInternal(component: any, config?: BridgeConfig) {
+function bridgeInternal(component: any, config?: Config) {
   const callbacks = new Map<string, CallbackHandler>();
   const hooks = config?.hooks;
+  const subjects = config?.subjects;
+
+  /**
+   * Resolve subject data from bound host table.
+   * Converts attributes array to key-value variables object.
+   */
+  async function resolveSubject(
+    ctx: GenericQueryCtx<GenericDataModel>,
+    subjectType: SubjectType,
+    subjectId: string
+  ): Promise<Record<string, unknown>> {
+    const tableName = subjects?.[subjectType];
+    if (!tableName) {
+      throw new Error(`No table bound for subject type: ${subjectType}`);
+    }
+
+    // Query the host's table by UUID
+    const doc = await (ctx.db as any)
+      .query(tableName)
+      .withIndex('by_uuid', (q: any) => q.eq('id', subjectId))
+      .unique();
+
+    if (!doc) return {};
+
+    // Convert attributes array to key-value object
+    const variables: Record<string, unknown> = {};
+    if (Array.isArray(doc.attributes)) {
+      for (const attr of doc.attributes) {
+        if (attr && typeof attr === 'object' && 'slug' in attr && 'value' in attr) {
+          variables[attr.slug as string] = attr.value;
+        }
+      }
+    }
+    return variables;
+  }
 
   return {
     /**
@@ -115,6 +143,24 @@ function bridgeInternal(component: any, config?: BridgeConfig) {
      * Get configured hooks.
      */
     hooks: () => hooks,
+
+    /**
+     * Resolve subject data from bound host table.
+     * Returns card values as key-value object for the given subject.
+     *
+     * @example
+     * ```typescript
+     * const vars = await b.resolve(ctx, 'beneficiary', 'ben_123');
+     * // { firstName: 'John', lastName: 'Doe', email: 'john@example.com' }
+     * ```
+     */
+    resolve: async (
+      ctx: GenericQueryCtx<GenericDataModel>,
+      subjectType: SubjectType,
+      subjectId: string
+    ): Promise<Record<string, unknown>> => {
+      return resolveSubject(ctx, subjectType, subjectId);
+    },
 
     /**
      * Register a callback handler for deliverable execution.
@@ -167,14 +213,23 @@ function bridgeInternal(component: any, config?: BridgeConfig) {
     /**
      * Evaluate deliverables for a subject.
      * Checks which deliverables are ready and creates evaluations for them.
+     * If `variables` is omitted and subjects are bound, auto-resolves from host table.
      *
      * @example
      * ```typescript
+     * // With auto-resolution (subjects bound):
      * const readiness = await b.evaluate(ctx, {
      *   organizationId: 'org_456',
      *   subjectType: 'beneficiary',
      *   subjectId: 'ben_789',
-     *   variables: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+     * });
+     *
+     * // With explicit variables:
+     * const readiness = await b.evaluate(ctx, {
+     *   organizationId: 'org_456',
+     *   subjectType: 'beneficiary',
+     *   subjectId: 'ben_789',
+     *   variables: { firstName: 'John', lastName: 'Doe' },
      *   changedFields: ['email'],
      * });
      * ```
@@ -183,7 +238,17 @@ function bridgeInternal(component: any, config?: BridgeConfig) {
       ctx: GenericMutationCtx<GenericDataModel>,
       trigger: EvaluateTrigger
     ): Promise<DeliverableReadiness[]> => {
-      return ctx.runMutation(component.public.deliverable.evaluate, trigger);
+      let { variables } = trigger;
+
+      // Auto-resolve if no variables provided and subjects are bound
+      if (!variables && subjects?.[trigger.subjectType]) {
+        variables = await resolveSubject(ctx, trigger.subjectType, trigger.subjectId);
+      }
+
+      return ctx.runMutation(component.public.deliverable.evaluate, {
+        ...trigger,
+        variables: variables ?? {},
+      });
     },
 
     /**
