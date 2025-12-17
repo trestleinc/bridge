@@ -97,6 +97,7 @@ Data collection definitions (forms, imports, APIs).
 | `procedure.create` | Create a new procedure |
 | `procedure.update` | Update an existing procedure |
 | `procedure.remove` | Delete a procedure |
+| `procedure.submit` | Validate card values against procedure schema |
 
 ### Deliverables
 
@@ -202,6 +203,80 @@ interface Evaluation {
   createdAt: number;
   completedAt?: number;
 }
+```
+
+## BridgeClient Methods
+
+The BridgeClient provides convenience methods for common operations:
+
+### submit
+
+Validate and submit card values through a procedure:
+
+```typescript
+const result = await client.submit(ctx, {
+  procedureId: 'proc_123',
+  organizationId: 'org_456',
+  subjectType: 'beneficiary',
+  subjectId: 'ben_789',
+  values: { firstName: 'John', lastName: 'Doe' },
+});
+
+if (result.success) {
+  // Write validated values to your tables
+  await ctx.runMutation(internal.subjects.update, {
+    id: 'ben_789',
+    ...result.validated,
+  });
+}
+```
+
+### evaluate
+
+Trigger deliverable evaluation for a subject:
+
+```typescript
+const readiness = await client.evaluate(ctx, {
+  organizationId: 'org_456',
+  subjectType: 'beneficiary',
+  subjectId: 'ben_789',
+  variables: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+  changedFields: ['email'],
+});
+
+for (const r of readiness) {
+  if (r.ready) {
+    console.log(`Deliverable ${r.deliverableId} triggered, evaluation ${r.evaluationId}`);
+  }
+}
+```
+
+### register & execute
+
+Register callback handlers and execute deliverables:
+
+```typescript
+// Register handlers at module level
+client.register('automation', async (deliverable, context) => {
+  // Execute automation logic
+  return { success: true, data: { sent: true } };
+});
+
+client.register('webhook', async (deliverable, context) => {
+  // Send HTTP webhook
+  const response = await fetch(deliverable.callbackUrl!, {
+    method: 'POST',
+    body: JSON.stringify(context),
+  });
+  return { success: response.ok };
+});
+
+// Execute in an action
+const result = await client.execute(deliverable, {
+  subjectType: 'beneficiary',
+  subjectId: 'ben_789',
+  variables: { firstName: 'John' },
+});
 ```
 
 ## Server Hooks

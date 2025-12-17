@@ -238,3 +238,77 @@ export interface DeliverableListOptions extends ListOptions {
 export interface EvaluationListOptions extends ListOptions {
   status?: EvaluationStatus;
 }
+
+// ============================================================================
+// Submission (Procedure Card Values)
+// ============================================================================
+
+/**
+ * Input for submitting card values through a procedure.
+ */
+export interface Submission {
+  procedureId: string;
+  organizationId: string;
+  subjectType: SubjectType;
+  subjectId: string;
+  values: Record<string, unknown>;
+}
+
+/**
+ * Validation error for a specific field.
+ */
+export interface FieldError {
+  field: string;
+  message: string;
+}
+
+/**
+ * Result of validating and submitting card values.
+ */
+export interface SubmissionResult {
+  success: boolean;
+  errors?: FieldError[];
+  validated: string[];
+}
+
+// ============================================================================
+// Execution (Deliverable Callbacks)
+// ============================================================================
+
+/**
+ * Context passed to callback handlers when executing a deliverable.
+ */
+export interface ExecutionContext {
+  subjectType: SubjectType;
+  subjectId: string;
+  variables: Record<string, unknown>;
+  changedFields?: string[];
+}
+
+/**
+ * Result from a callback handler execution.
+ */
+export interface ExecutionResult {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+/**
+ * Callback handler function type.
+ */
+export type CallbackHandler = (
+  deliverable: Deliverable,
+  context: ExecutionContext
+) => Promise<ExecutionResult>;
+
+/**
+ * Input for triggering deliverable evaluation.
+ */
+export interface EvaluateTrigger {
+  organizationId: string;
+  subjectType: SubjectType;
+  subjectId: string;
+  variables: Record<string, unknown>;
+  changedFields?: string[];
+}

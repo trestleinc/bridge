@@ -74,4 +74,13 @@ export type {
   ProcedureListOptions,
   DeliverableListOptions,
   EvaluationListOptions,
+  // Submission types
+  Submission,
+  FieldError,
+  SubmissionResult,
+  // Execution types
+  ExecutionContext,
+  ExecutionResult,
+  CallbackHandler,
+  EvaluateTrigger,
 } from './types.js';

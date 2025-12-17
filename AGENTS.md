@@ -23,6 +23,14 @@ BridgeClient          // Client with hooks support
 BridgeHooks           // Authorization and side effect hooks
 ```
 
+### BridgeClient Methods
+```typescript
+client.submit(ctx, submission)   // Validate card values
+client.evaluate(ctx, trigger)    // Check and trigger deliverables
+client.execute(deliverable, ctx) // Run registered callback
+client.register(type, handler)   // Register callback handler
+```
+
 ### Client (`@trestleinc/bridge/client`)
 ```typescript
 NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError
@@ -32,7 +40,7 @@ getLogger()           // LogTape logger
 ### Component API (via `client.api`)
 ```typescript
 card.get, card.find, card.list, card.create
-procedure.get, procedure.list, procedure.create, procedure.update, procedure.remove
+procedure.get, procedure.list, procedure.create, procedure.update, procedure.remove, procedure.submit
 deliverable.get, deliverable.list, deliverable.create, deliverable.update, deliverable.evaluate
 evaluation.get, evaluation.list, evaluation.start, evaluation.cancel, evaluation.complete
 ```

@@ -297,12 +297,155 @@ const _procedureRemove = mutation({
   },
 });
 
+const fieldErrorValidator = v.object({
+  field: v.string(),
+  message: v.string(),
+});
+
+const _procedureSubmit = mutation({
+  args: {
+    procedureId: v.string(),
+    organizationId: v.string(),
+    subjectType: subjectTypeValidator,
+    subjectId: v.string(),
+    values: v.any(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    errors: v.optional(v.array(fieldErrorValidator)),
+    validated: v.array(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const logger = getLogger(['procedure', 'submit']);
+
+    // Get the procedure
+    const proc = await ctx.db
+      .query('procedures')
+      .withIndex('by_uuid', (q) => q.eq('id', args.procedureId))
+      .unique();
+
+    if (!proc) {
+      return {
+        success: false,
+        errors: [{ field: 'procedureId', message: `Procedure not found: ${args.procedureId}` }],
+        validated: [],
+      };
+    }
+
+    // Validate card values against procedure schema
+    const errors: Array<{ field: string; message: string }> = [];
+    const validated: string[] = [];
+
+    for (const card of proc.cards) {
+      const value = args.values?.[card.slug];
+
+      // Check required fields
+      if (card.required && (value === undefined || value === null || value === '')) {
+        errors.push({ field: card.slug, message: `Required field is missing` });
+        continue;
+      }
+
+      // Skip validation for optional empty fields
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+
+      // Type validation
+      const typeError = validateType(card.type, value);
+      if (typeError) {
+        errors.push({ field: card.slug, message: typeError });
+        continue;
+      }
+
+      validated.push(card.slug);
+    }
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { procedureId: args.procedureId, errors });
+      return { success: false, errors, validated };
+    }
+
+    logger.info('Submission validated', {
+      procedureId: args.procedureId,
+      subjectId: args.subjectId,
+      validated,
+    });
+
+    return { success: true, validated };
+  },
+});
+
+/**
+ * Validate a value against a card type.
+ */
+function validateType(
+  type:
+    | 'STRING'
+    | 'TEXT'
+    | 'NUMBER'
+    | 'BOOLEAN'
+    | 'DATE'
+    | 'EMAIL'
+    | 'URL'
+    | 'PHONE'
+    | 'SSN'
+    | 'ADDRESS'
+    | 'SUBJECT'
+    | 'ARRAY',
+  value: unknown
+): string | null {
+  switch (type) {
+    case 'STRING':
+    case 'TEXT':
+      if (typeof value !== 'string') return `Expected string, got ${typeof value}`;
+      break;
+    case 'NUMBER':
+      if (typeof value !== 'number') return `Expected number, got ${typeof value}`;
+      break;
+    case 'BOOLEAN':
+      if (typeof value !== 'boolean') return `Expected boolean, got ${typeof value}`;
+      break;
+    case 'DATE':
+      if (typeof value !== 'string' && typeof value !== 'number')
+        return `Expected date string or timestamp, got ${typeof value}`;
+      break;
+    case 'EMAIL':
+      if (typeof value !== 'string' || !value.includes('@')) return `Expected valid email address`;
+      break;
+    case 'URL':
+      if (typeof value !== 'string') return `Expected URL string`;
+      try {
+        new URL(value);
+      } catch {
+        return `Invalid URL format`;
+      }
+      break;
+    case 'PHONE':
+      if (typeof value !== 'string') return `Expected phone string`;
+      break;
+    case 'SSN':
+      if (typeof value !== 'string') return `Expected SSN string`;
+      break;
+    case 'ADDRESS':
+      if (typeof value !== 'object' || value === null) return `Expected address object`;
+      break;
+    case 'SUBJECT':
+      if (typeof value !== 'string') return `Expected subject ID string`;
+      break;
+    case 'ARRAY':
+      if (!Array.isArray(value)) return `Expected array, got ${typeof value}`;
+      break;
+  }
+  return null;
+}
+
 export const procedure = {
   get: _procedureGet,
   list: _procedureList,
   create: _procedureCreate,
   update: _procedureUpdate,
   remove: _procedureRemove,
+  submit: _procedureSubmit,
 };
 
 // ============================================================================
