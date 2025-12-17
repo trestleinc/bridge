@@ -5,63 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.1] - 2025-12-17
+
+Initial release of @trestleinc/bridge.
 
 ### Added
 
-- **Universal SQLite persistence** - Works in both browser and React Native with automatic platform detection:
-  - Browser: Uses sql.js (SQLite compiled to WASM, ~500KB) with optional OPFS persistence
-  - React Native: Uses op-sqlite (native SQLite)
-  - Auto-detects platform via `navigator.product === 'ReactNative'`
-  - Implements abstract-level interface with y-leveldb for Yjs persistence
-  - 12 unit tests covering key-value operations, batching, iteration, and lifecycle
-- Swappable persistence layer with three providers:
-  - `indexeddbPersistence()` - Browser using y-indexeddb and browser-level
-  - `sqlitePersistence()` - Universal SQLite (browser + React Native)
-  - `memoryPersistence()` - In-memory for testing
-- `NonRetriableError` class for errors that should not be retried (auth failures, validation)
-- Database name validation in SQLite persistence to prevent path traversal attacks
-- Type declarations for y-leveldb module (fixes broken package.json exports)
-
-### Changed
-
-- Simplified prose sync architecture using TanStack DB's native `sync.sync()` callback
-- SQLite persistence now uses synchronous API (consistent with other providers)
-- Improved type safety in SQLite persistence (removed `any` types)
-- Properly await async database operations in SQLite persistence
-
-### Removed
-
-- `@tanstack/offline-transactions` dependency (provided no value over native TanStack DB sync)
-- `getOrInitializeCollection` helper (replaced by native TanStack DB patterns)
-- Lazy loading of React Native dependencies (direct imports for better type safety)
-
-## [1.0.0] - 2025-12-01
-
-First stable release of Convex Replicate.
-
-### Added
-
-- Effect.js service architecture for dependency injection and composable services
-- Comprehensive test suite with 180+ tests (unit, integration, benchmarks)
-- JSDoc documentation for all exported functions
-- Undo/redo and client-side history utilities
-- Version history and maintenance features
-- Improved type safety across client code with proper TypeScript interfaces
-- Checkpoint service for managing sync checkpoints in IndexedDB
-- Protocol version negotiation for handling package updates
-- Snapshot recovery service for handling compaction scenarios
-- Reconciliation service for phantom document cleanup
-
-### Changed
-
-- Refactored terminology: "sync" renamed to "replicate" throughout codebase
-- Simplified architecture with cleaner Effect-based service layer
-- Improved type definitions (removed `any` types in favor of proper generics)
-- Streamlined Yjs update application (removed unnecessary transaction wrapper)
-
-### Removed
-
-- SvelteKit example (TanStack Start example remains as reference)
-- Dead code and unused imports
-- Outdated monorepo-style release configuration
+- **Cards** - Field definitions with types and security levels
+  - Types: text, number, boolean, date, json
+  - Security levels: public, internal, confidential, restricted
+  - Subject types: person, organization, transaction
+- **Procedures** - Data collection definitions
+  - Types: form, import, api
+  - Card mappings with field paths and transformations
+  - Subject operations: create, update, upsert
+- **Deliverables** - Reactive triggers
+  - Required cards specification
+  - Prerequisites and conditions
+  - HTTP callback and Convex action support
+  - Status management: active, paused, archived
+- **Evaluations** - Execution tracking
+  - Scheduling support
+  - Status tracking: pending, running, completed, failed, cancelled
+  - Result capture with duration and errors
+- **Namespaced API**
+  - `card.{get, find, list, create}`
+  - `procedure.{get, list, create, update, remove}`
+  - `deliverable.{get, list, create, update, evaluate}`
+  - `evaluation.{get, list, start, cancel, complete}`
+- **Server hooks** for authorization and side effects

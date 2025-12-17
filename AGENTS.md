@@ -11,25 +11,33 @@
 - **Imports:** Use `import type` for types. Use `node:` protocol for Node built-ins.
 - **Logging:** Use `LogTape`. Avoid `console.*` (warns in Biome, allowed in tests).
 - **Structure:** Single package. `src/client` (browser), `src/server` (Convex), `src/component`.
-- **Documentation:** ALWAYS use `Context7` tool for library docs (Convex, Yjs, TanStack).
-- **Deletion:** Hard deletes in main table; soft deletes (append-only) in component.
+- **Documentation:** ALWAYS use `Context7` tool for library docs (Convex, Effect).
+- **Scoping:** All data is scoped by `organizationId`.
 
 ## Public API
 
-### Server (`@trestleinc/replicate/server`)
+### Server (`@trestleinc/bridge/server`)
 ```typescript
-replicate()              // Factory to create bound replicate function
-table()                  // Define replicated table schema
-prose()                  // Validator for prose fields
+bridge()              // Factory to create BridgeClient
+BridgeClient          // Client with hooks support
+BridgeHooks           // Authorization and side effect hooks
 ```
 
-### Client (`@trestleinc/replicate/client`)
+### Client (`@trestleinc/bridge/client`)
 ```typescript
-convexCollectionOptions()   // Main entry point
-extract()                   // Extract text from prose JSON
+NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError
+getLogger()           // LogTape logger
+```
+
+### Component API (via `client.api`)
+```typescript
+card.get, card.find, card.list, card.create
+procedure.get, procedure.list, procedure.create, procedure.update, procedure.remove
+deliverable.get, deliverable.list, deliverable.create, deliverable.update, deliverable.evaluate
+evaluation.get, evaluation.list, evaluation.start, evaluation.cancel, evaluation.complete
 ```
 
 ## Critical Rules (from CLAUDE.md)
 - NEVER use WebSearch for library documentation; use Context7.
-- Examples use `bun` and link to root via `file:../..`.
-- Use `table()` helper for schemas to inject version/timestamp.
+- Use `bun` for all commands.
+- Namespaced API pattern: `card.get`, `procedure.list`, etc.
