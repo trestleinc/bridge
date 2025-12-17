@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Single package with exports:
 - `@trestleinc/bridge` - Shared types and validators
 - `@trestleinc/bridge/client` - Client utilities (errors, logger)
-- `@trestleinc/bridge/server` - Server helpers (bridge factory, BridgeClient)
+- `@trestleinc/bridge/server` - Server helpers (bridge factory)
 - `@trestleinc/bridge/convex.config` - Component configuration
 
 ## Development Commands
@@ -50,7 +50,7 @@ src/
 │   └── logger.ts            # LogTape logger
 ├── server/                  # Server-side (Convex functions)
 │   ├── index.ts             # Public exports
-│   └── builder.ts           # bridge() factory, BridgeClient
+│   └── builder.ts           # bridge() factory
 ├── component/               # Internal Convex component
 │   ├── convex.config.ts     # Component config
 │   ├── schema.ts            # Database schema (cards, procedures, deliverables, evaluations)
@@ -93,8 +93,7 @@ getLogger()
 
 ### Server (`@trestleinc/bridge/server`)
 ```typescript
-bridge()              // Factory to create BridgeClient bound to component
-BridgeClient          // Client class with hooks support
+bridge()              // Factory to create bridge instance bound to component
 BridgeHooks           // Hook interface for authorization and side effects
 BridgeConfig          // Configuration type
 ```
@@ -113,7 +112,7 @@ procedureTypeValidator, operationValidator
 evaluationStatusValidator, deliverableStatusValidator
 ```
 
-### Component API (via `client.api`)
+### Component API (via `b.api`)
 ```typescript
 card.get, card.find, card.list, card.create
 procedure.get, procedure.list, procedure.create, procedure.update, procedure.remove, procedure.submit
@@ -121,13 +120,13 @@ deliverable.get, deliverable.list, deliverable.create, deliverable.update, deliv
 evaluation.get, evaluation.list, evaluation.start, evaluation.cancel, evaluation.complete
 ```
 
-### BridgeClient Methods
+### Bridge Methods
 ```typescript
-client.submit(ctx, submission)     // Validate card values through procedure
-client.evaluate(ctx, trigger)      // Check and trigger deliverables
-client.execute(deliverable, ctx)   // Run registered callback handler
-client.register(type, handler)     // Register callback handler
-client.handler(type)               // Get registered handler
+b.submit(ctx, submission)     // Validate card values through procedure
+b.evaluate(ctx, trigger)      // Check and trigger deliverables
+b.execute(deliverable, ctx)   // Run registered callback handler
+b.register(type, handler)     // Register callback handler
+b.handler(type)               // Get registered handler
 ```
 
 ## Key Patterns
@@ -138,7 +137,7 @@ client.handler(type)               // Get registered handler
 import { bridge } from '@trestleinc/bridge/server';
 import { components } from './_generated/api';
 
-export const client = bridge(components.bridge)({
+export const b = bridge(components.bridge)({
   hooks: {
     evalRead: async (ctx, organizationId) => { /* auth check */ },
     evalWrite: async (ctx, organizationId) => { /* auth check */ },
@@ -147,16 +146,16 @@ export const client = bridge(components.bridge)({
 });
 ```
 
-### Using the Client API
+### Using the Bridge API
 ```typescript
 // convex/cards.ts
 import { query, mutation } from './_generated/server';
-import { client } from './bridge';
+import { b } from './bridge';
 
 export const list = query({
   args: { organizationId: v.string() },
   handler: async (ctx, { organizationId }) => {
-    return ctx.runQuery(client.api.card.list, { organizationId });
+    return ctx.runQuery(b.api.card.list, { organizationId });
   },
 });
 ```

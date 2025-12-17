@@ -32,14 +32,14 @@ app.use(bridge);
 export default app;
 ```
 
-### 2. Create a Bridge Client
+### 2. Create a Bridge Instance
 
 ```typescript
 // convex/bridge.ts
 import { bridge } from '@trestleinc/bridge/server';
 import { components } from './_generated/api';
 
-export const client = bridge(components.bridge)();
+export const b = bridge(components.bridge)();
 ```
 
 ### 3. Use in Queries and Mutations
@@ -48,12 +48,12 @@ export const client = bridge(components.bridge)();
 // convex/cards.ts
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
-import { client } from './bridge';
+import { b } from './bridge';
 
 export const list = query({
   args: { organizationId: v.string() },
   handler: async (ctx, { organizationId }) => {
-    return ctx.runQuery(client.api.card.list, { organizationId });
+    return ctx.runQuery(b.api.card.list, { organizationId });
   },
 });
 
@@ -68,7 +68,7 @@ export const create = mutation({
     createdBy: v.string(),
   },
   handler: async (ctx, args) => {
-    return ctx.runMutation(client.api.card.create, args);
+    return ctx.runMutation(b.api.card.create, args);
   },
 });
 ```
@@ -205,16 +205,16 @@ interface Evaluation {
 }
 ```
 
-## BridgeClient Methods
+## Bridge Methods
 
-The BridgeClient provides convenience methods for common operations:
+The bridge instance provides convenience methods for common operations:
 
 ### submit
 
 Validate and submit card values through a procedure:
 
 ```typescript
-const result = await client.submit(ctx, {
+const result = await b.submit(ctx, {
   procedureId: 'proc_123',
   organizationId: 'org_456',
   subjectType: 'beneficiary',
@@ -236,7 +236,7 @@ if (result.success) {
 Trigger deliverable evaluation for a subject:
 
 ```typescript
-const readiness = await client.evaluate(ctx, {
+const readiness = await b.evaluate(ctx, {
   organizationId: 'org_456',
   subjectType: 'beneficiary',
   subjectId: 'ben_789',
@@ -257,12 +257,12 @@ Register callback handlers and execute deliverables:
 
 ```typescript
 // Register handlers at module level
-client.register('automation', async (deliverable, context) => {
+b.register('automation', async (deliverable, context) => {
   // Execute automation logic
   return { success: true, data: { sent: true } };
 });
 
-client.register('webhook', async (deliverable, context) => {
+b.register('webhook', async (deliverable, context) => {
   // Send HTTP webhook
   const response = await fetch(deliverable.callbackUrl!, {
     method: 'POST',
@@ -272,7 +272,7 @@ client.register('webhook', async (deliverable, context) => {
 });
 
 // Execute in an action
-const result = await client.execute(deliverable, {
+const result = await b.execute(deliverable, {
   subjectType: 'beneficiary',
   subjectId: 'ben_789',
   variables: { firstName: 'John' },
@@ -284,7 +284,7 @@ const result = await client.execute(deliverable, {
 Configure authorization and side effects:
 
 ```typescript
-const client = bridge(components.bridge)({
+const b = bridge(components.bridge)({
   hooks: {
     // Authorization
     evalRead: async (ctx, organizationId) => {

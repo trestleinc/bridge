@@ -18,17 +18,17 @@
 
 ### Server (`@trestleinc/bridge/server`)
 ```typescript
-bridge()              // Factory to create BridgeClient
-BridgeClient          // Client with hooks support
+bridge()              // Factory to create bridge instance
 BridgeHooks           // Authorization and side effect hooks
+BridgeConfig          // Configuration type
 ```
 
-### BridgeClient Methods
+### Bridge Methods
 ```typescript
-client.submit(ctx, submission)   // Validate card values
-client.evaluate(ctx, trigger)    // Check and trigger deliverables
-client.execute(deliverable, ctx) // Run registered callback
-client.register(type, handler)   // Register callback handler
+b.submit(ctx, submission)   // Validate card values
+b.evaluate(ctx, trigger)    // Check and trigger deliverables
+b.execute(deliverable, ctx) // Run registered callback
+b.register(type, handler)   // Register callback handler
 ```
 
 ### Client (`@trestleinc/bridge/client`)
@@ -37,7 +37,7 @@ NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableEr
 getLogger()           // LogTape logger
 ```
 
-### Component API (via `client.api`)
+### Component API (via `b.api`)
 ```typescript
 card.get, card.find, card.list, card.create
 procedure.get, procedure.list, procedure.create, procedure.update, procedure.remove, procedure.submit

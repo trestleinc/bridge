@@ -1,7 +1,7 @@
 /**
  * @trestleinc/bridge - Server Builder
  *
- * Factory function to create a BridgeClient bound to a Convex component.
+ * Factory function to create a bridge instance bound to a Convex component.
  */
 
 import type { GenericMutationCtx, GenericQueryCtx, GenericDataModel } from 'convex/server';
@@ -62,157 +62,10 @@ export interface BridgeHooks {
 }
 
 /**
- * Configuration for the Bridge client.
+ * Configuration for the bridge instance.
  */
 export interface BridgeConfig {
   hooks?: BridgeHooks;
-}
-
-// ============================================================================
-// Bridge Client Class
-// ============================================================================
-
-/**
- * Client for interacting with the Bridge component.
- *
- * Provides namespaced APIs for:
- * - cards: Field definitions
- * - procedures: Data collection definitions
- * - deliverables: Reactive triggers
- * - evaluations: Execution management
- *
- * And convenience methods:
- * - submit: Validate and submit card values
- * - evaluate: Trigger deliverable evaluation
- * - execute: Run callback for a triggered deliverable
- * - register: Register callback handlers
- */
-export class BridgeClient {
-  private callbacks: Map<string, CallbackHandler> = new Map();
-
-  constructor(
-    private component: any,
-    private hooks?: BridgeHooks
-  ) {}
-
-  /**
-   * Get the underlying component for direct access to public API.
-   */
-  get api() {
-    return this.component.public;
-  }
-
-  /**
-   * Get configured hooks.
-   */
-  getHooks(): BridgeHooks | undefined {
-    return this.hooks;
-  }
-
-  /**
-   * Register a callback handler for deliverable execution.
-   *
-   * @example
-   * ```typescript
-   * client.register('automation', async (deliverable, context) => {
-   *   // Execute automation logic
-   *   return { success: true };
-   * });
-   * ```
-   */
-  register(type: string, handler: CallbackHandler): void {
-    this.callbacks.set(type, handler);
-  }
-
-  /**
-   * Get a registered callback handler.
-   */
-  handler(type: string): CallbackHandler | undefined {
-    return this.callbacks.get(type);
-  }
-
-  /**
-   * Submit card values through a procedure.
-   * Validates values against procedure schema and returns validation result.
-   * Host app is responsible for writing validated values to its own tables.
-   *
-   * @example
-   * ```typescript
-   * const result = await client.submit(ctx, {
-   *   procedureId: 'proc_123',
-   *   organizationId: 'org_456',
-   *   subjectType: 'beneficiary',
-   *   subjectId: 'ben_789',
-   *   values: { firstName: 'John', lastName: 'Doe' },
-   * });
-   * if (result.success) {
-   *   // Write values to your tables
-   * }
-   * ```
-   */
-  async submit(
-    ctx: GenericMutationCtx<GenericDataModel>,
-    submission: Submission
-  ): Promise<SubmissionResult> {
-    return ctx.runMutation(this.api.procedure.submit, submission);
-  }
-
-  /**
-   * Evaluate deliverables for a subject.
-   * Checks which deliverables are ready and creates evaluations for them.
-   *
-   * @example
-   * ```typescript
-   * const readiness = await client.evaluate(ctx, {
-   *   organizationId: 'org_456',
-   *   subjectType: 'beneficiary',
-   *   subjectId: 'ben_789',
-   *   variables: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
-   *   changedFields: ['email'],
-   * });
-   * ```
-   */
-  async evaluate(
-    ctx: GenericMutationCtx<GenericDataModel>,
-    trigger: EvaluateTrigger
-  ): Promise<DeliverableReadiness[]> {
-    return ctx.runMutation(this.api.deliverable.evaluate, trigger);
-  }
-
-  /**
-   * Execute a callback for a triggered deliverable.
-   * Looks up the registered handler and invokes it with the deliverable context.
-   *
-   * @example
-   * ```typescript
-   * const result = await client.execute(deliverable, {
-   *   subjectType: 'beneficiary',
-   *   subjectId: 'ben_789',
-   *   variables: { firstName: 'John' },
-   * });
-   * ```
-   */
-  async execute(deliverable: Deliverable, context: ExecutionContext): Promise<ExecutionResult> {
-    // Determine callback type from deliverable
-    const callbackType = deliverable.callbackAction?.split(':')[0] || 'default';
-    const handler = this.callbacks.get(callbackType);
-
-    if (!handler) {
-      return {
-        success: false,
-        error: `No handler registered for callback type: ${callbackType}`,
-      };
-    }
-
-    try {
-      return await handler(deliverable, context);
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  }
 }
 
 // ============================================================================
@@ -220,7 +73,7 @@ export class BridgeClient {
 // ============================================================================
 
 /**
- * Create a Bridge client bound to your component.
+ * Create a bridge instance bound to your component.
  *
  * @example
  * ```typescript
@@ -228,19 +81,146 @@ export class BridgeClient {
  * import { bridge } from '@trestleinc/bridge/server';
  * import { components } from './_generated/api';
  *
- * const client = bridge(components.bridge)();
- *
- * // Use in queries/mutations:
- * export const listCards = query({
- *   args: { organizationId: v.string() },
- *   handler: async (ctx, { organizationId }) => {
- *     return ctx.runQuery(client.api.listCards, { organizationId });
- *   },
+ * export const b = bridge(components.bridge)({
+ *   hooks: { evalRead: ..., evalWrite: ... }
  * });
+ *
+ * // Register callbacks
+ * b.register('automation', async (deliverable, ctx) => { ... });
+ *
+ * // Use in mutations
+ * await b.submit(ctx, { procedureId, subjectId, values });
  * ```
  */
 export function bridge(component: any) {
   return function boundBridge(config?: BridgeConfig) {
-    return new BridgeClient(component, config?.hooks);
+    return bridgeInternal(component, config);
+  };
+}
+
+/**
+ * Internal implementation for bridge.
+ */
+function bridgeInternal(component: any, config?: BridgeConfig) {
+  const callbacks = new Map<string, CallbackHandler>();
+  const hooks = config?.hooks;
+
+  return {
+    /**
+     * Access the underlying component public API.
+     */
+    api: component.public,
+
+    /**
+     * Get configured hooks.
+     */
+    hooks: () => hooks,
+
+    /**
+     * Register a callback handler for deliverable execution.
+     *
+     * @example
+     * ```typescript
+     * b.register('automation', async (deliverable, context) => {
+     *   // Execute automation logic
+     *   return { success: true };
+     * });
+     * ```
+     */
+    register: (type: string, handler: CallbackHandler): void => {
+      callbacks.set(type, handler);
+    },
+
+    /**
+     * Get a registered callback handler.
+     */
+    handler: (type: string): CallbackHandler | undefined => {
+      return callbacks.get(type);
+    },
+
+    /**
+     * Submit card values through a procedure.
+     * Validates values against procedure schema and returns validation result.
+     * Host app is responsible for writing validated values to its own tables.
+     *
+     * @example
+     * ```typescript
+     * const result = await b.submit(ctx, {
+     *   procedureId: 'proc_123',
+     *   organizationId: 'org_456',
+     *   subjectType: 'beneficiary',
+     *   subjectId: 'ben_789',
+     *   values: { firstName: 'John', lastName: 'Doe' },
+     * });
+     * if (result.success) {
+     *   // Write values to your tables
+     * }
+     * ```
+     */
+    submit: async (
+      ctx: GenericMutationCtx<GenericDataModel>,
+      submission: Submission
+    ): Promise<SubmissionResult> => {
+      return ctx.runMutation(component.public.procedure.submit, submission);
+    },
+
+    /**
+     * Evaluate deliverables for a subject.
+     * Checks which deliverables are ready and creates evaluations for them.
+     *
+     * @example
+     * ```typescript
+     * const readiness = await b.evaluate(ctx, {
+     *   organizationId: 'org_456',
+     *   subjectType: 'beneficiary',
+     *   subjectId: 'ben_789',
+     *   variables: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+     *   changedFields: ['email'],
+     * });
+     * ```
+     */
+    evaluate: async (
+      ctx: GenericMutationCtx<GenericDataModel>,
+      trigger: EvaluateTrigger
+    ): Promise<DeliverableReadiness[]> => {
+      return ctx.runMutation(component.public.deliverable.evaluate, trigger);
+    },
+
+    /**
+     * Execute a callback for a triggered deliverable.
+     * Looks up the registered handler and invokes it with the deliverable context.
+     *
+     * @example
+     * ```typescript
+     * const result = await b.execute(deliverable, {
+     *   subjectType: 'beneficiary',
+     *   subjectId: 'ben_789',
+     *   variables: { firstName: 'John' },
+     * });
+     * ```
+     */
+    execute: async (
+      deliverable: Deliverable,
+      context: ExecutionContext
+    ): Promise<ExecutionResult> => {
+      const callbackType = deliverable.callbackAction?.split(':')[0] || 'default';
+      const handler = callbacks.get(callbackType);
+
+      if (!handler) {
+        return {
+          success: false,
+          error: `No handler registered for callback type: ${callbackType}`,
+        };
+      }
+
+      try {
+        return await handler(deliverable, context);
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
   };
 }
