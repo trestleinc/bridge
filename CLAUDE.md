@@ -94,8 +94,6 @@ getLogger()
 ### Server (`@trestleinc/bridge/server`)
 ```typescript
 bridge()              // Factory to create bridge instance bound to component
-BridgeHooks           // Hook interface for authorization and side effects
-BridgeConfig          // Configuration type
 ```
 
 ### Shared (`@trestleinc/bridge`)
@@ -123,7 +121,8 @@ evaluation.get, evaluation.list, evaluation.start, evaluation.cancel, evaluation
 ### Bridge Methods
 ```typescript
 b.submit(ctx, submission)     // Validate card values through procedure
-b.evaluate(ctx, trigger)      // Check and trigger deliverables
+b.evaluate(ctx, trigger)      // Check and trigger deliverables (auto-resolves if subjects bound)
+b.resolve(ctx, subjectType, subjectId) // Resolve subject data from bound table
 b.execute(deliverable, ctx)   // Run registered callback handler
 b.register(type, handler)     // Register callback handler
 b.handler(type)               // Get registered handler
@@ -138,11 +137,18 @@ import { bridge } from '@trestleinc/bridge/server';
 import { components } from './_generated/api';
 
 export const b = bridge(components.bridge)({
+  // Bind subject types to host tables for auto-resolution
+  subjects: {
+    beneficiary: 'beneficiaries',
+    event: 'events',
+    eventInstance: 'eventInstances',
+  },
   hooks: {
-    evalRead: async (ctx, organizationId) => { /* auth check */ },
-    evalWrite: async (ctx, organizationId) => { /* auth check */ },
-    onCardCreated: async (ctx, card) => { /* side effect */ },
-  }
+    read: async (ctx, organizationId) => { /* auth check */ },
+    write: async (ctx, organizationId) => { /* auth check */ },
+    card: { insert: async (ctx, card) => { /* side effect */ } },
+    deliverable: { trigger: async (ctx, evaluation) => { /* side effect */ } },
+  },
 });
 ```
 

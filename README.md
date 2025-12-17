@@ -39,7 +39,18 @@ export default app;
 import { bridge } from '@trestleinc/bridge/server';
 import { components } from './_generated/api';
 
-export const b = bridge(components.bridge)();
+export const b = bridge(components.bridge)({
+  // Bind subject types to your host tables for automatic context resolution
+  subjects: {
+    beneficiary: 'beneficiaries',
+    event: 'events',
+    eventInstance: 'eventInstances',
+  },
+  hooks: {
+    read: async (ctx, orgId) => { /* auth check */ },
+    write: async (ctx, orgId) => { /* auth check */ },
+  },
+});
 ```
 
 ### 3. Use in Queries and Mutations
@@ -233,9 +244,17 @@ if (result.success) {
 
 ### evaluate
 
-Trigger deliverable evaluation for a subject:
+Trigger deliverable evaluation for a subject. If subjects are bound, variables are auto-resolved from the host table:
 
 ```typescript
+// With auto-resolution (subjects bound) - no variables needed!
+const readiness = await b.evaluate(ctx, {
+  organizationId: 'org_456',
+  subjectType: 'beneficiary',
+  subjectId: 'ben_789',
+});
+
+// Or with explicit variables (overrides auto-resolution):
 const readiness = await b.evaluate(ctx, {
   organizationId: 'org_456',
   subjectType: 'beneficiary',
@@ -249,6 +268,15 @@ for (const r of readiness) {
     console.log(`Deliverable ${r.deliverableId} triggered, evaluation ${r.evaluationId}`);
   }
 }
+```
+
+### resolve
+
+Manually resolve subject data from a bound host table:
+
+```typescript
+const variables = await b.resolve(ctx, 'beneficiary', 'ben_789');
+// { firstName: 'John', lastName: 'Doe', email: 'john@example.com' }
 ```
 
 ### register & execute
@@ -279,33 +307,65 @@ const result = await b.execute(deliverable, {
 });
 ```
 
+## Subject Bindings
+
+Bind subject types to your host tables for automatic context resolution:
+
+```typescript
+const b = bridge(components.bridge)({
+  subjects: {
+    beneficiary: 'beneficiaries',  // Your beneficiaries table
+    event: 'events',               // Your events table
+    eventInstance: 'eventInstances',
+  },
+});
+```
+
+When subjects are bound, Bridge can automatically fetch subject data when evaluating deliverables. Your host tables must have:
+- An `id` field (UUID string)
+- An `attributes` array with `{ slug, value }` objects
+- A `by_uuid` index on the `id` field
+
 ## Server Hooks
 
 Configure authorization and side effects:
 
 ```typescript
 const b = bridge(components.bridge)({
+  subjects: {
+    beneficiary: 'beneficiaries',
+    event: 'events',
+    eventInstance: 'eventInstances',
+  },
   hooks: {
     // Authorization
-    evalRead: async (ctx, organizationId) => {
+    read: async (ctx, organizationId) => {
       // Verify user can read this organization's data
     },
-    evalWrite: async (ctx, organizationId) => {
+    write: async (ctx, organizationId) => {
       // Verify user can write to this organization
     },
 
-    // Side effects
-    onCardCreated: async (ctx, card) => {
-      // React to card creation
+    // Side effects - namespaced by entity type
+    card: {
+      insert: async (ctx, card) => {
+        // React to card creation
+      },
     },
-    onProcedureCreated: async (ctx, procedure) => {
-      // React to procedure creation
+    procedure: {
+      insert: async (ctx, procedure) => {
+        // React to procedure creation
+      },
     },
-    onDeliverableTriggered: async (ctx, evaluation) => {
-      // React when a deliverable is triggered
+    deliverable: {
+      trigger: async (ctx, evaluation) => {
+        // React when a deliverable is triggered
+      },
     },
-    onEvaluationCompleted: async (ctx, evaluation) => {
-      // React when an evaluation completes
+    evaluation: {
+      complete: async (ctx, evaluation) => {
+        // React when an evaluation completes
+      },
     },
   },
 });

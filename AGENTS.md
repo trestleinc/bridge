@@ -19,14 +19,13 @@
 ### Server (`@trestleinc/bridge/server`)
 ```typescript
 bridge()              // Factory to create bridge instance
-BridgeHooks           // Authorization and side effect hooks
-BridgeConfig          // Configuration type
 ```
 
 ### Bridge Methods
 ```typescript
 b.submit(ctx, submission)   // Validate card values
-b.evaluate(ctx, trigger)    // Check and trigger deliverables
+b.evaluate(ctx, trigger)    // Check and trigger deliverables (auto-resolves if subjects bound)
+b.resolve(ctx, type, id)    // Resolve subject data from bound table
 b.execute(deliverable, ctx) // Run registered callback
 b.register(type, handler)   // Register callback handler
 ```
