@@ -1,16 +1,15 @@
 /**
- * Convex validators for @trestleinc/bridge
+ * Type definitions and runtime guards for @trestleinc/bridge
  *
- * These validators are used in both component schema and public API definitions.
+ * These are used across client, server, and component code for type safety.
+ * Convex validators are defined inline within the component to avoid circular dependencies.
  */
 
-import { v } from 'convex/values';
-
 // ============================================================================
-// Card Types (formerly Sigil Types)
+// Variant (Card field types)
 // ============================================================================
 
-export const CardType = {
+const variantValues = {
   STRING: 'STRING',
   TEXT: 'TEXT',
   NUMBER: 'NUMBER',
@@ -25,243 +24,163 @@ export const CardType = {
   ARRAY: 'ARRAY',
 } as const;
 
-export type CardType = (typeof CardType)[keyof typeof CardType];
+export type Variant = (typeof variantValues)[keyof typeof variantValues];
 
-export const cardTypeValidator = v.union(
-  v.literal('STRING'),
-  v.literal('TEXT'),
-  v.literal('NUMBER'),
-  v.literal('BOOLEAN'),
-  v.literal('DATE'),
-  v.literal('EMAIL'),
-  v.literal('URL'),
-  v.literal('PHONE'),
-  v.literal('SSN'),
-  v.literal('ADDRESS'),
-  v.literal('SUBJECT'),
-  v.literal('ARRAY')
-);
+const variantDisplayNames: Record<Variant, string> = {
+  STRING: 'Text',
+  TEXT: 'Long Text',
+  NUMBER: 'Number',
+  BOOLEAN: 'Yes/No',
+  DATE: 'Date',
+  EMAIL: 'Email',
+  URL: 'URL',
+  PHONE: 'Phone',
+  SSN: 'SSN',
+  ADDRESS: 'Address',
+  SUBJECT: 'Subject Reference',
+  ARRAY: 'List',
+};
 
-export function isCardType(type: string): type is CardType {
-  return Object.values(CardType).includes(type as CardType);
-}
-
-export function getCardTypeDisplayName(type: CardType): string {
-  const displayNames: Record<CardType, string> = {
-    [CardType.STRING]: 'Text',
-    [CardType.TEXT]: 'Long Text',
-    [CardType.NUMBER]: 'Number',
-    [CardType.BOOLEAN]: 'Yes/No',
-    [CardType.DATE]: 'Date',
-    [CardType.EMAIL]: 'Email',
-    [CardType.URL]: 'URL',
-    [CardType.PHONE]: 'Phone',
-    [CardType.SSN]: 'SSN',
-    [CardType.ADDRESS]: 'Address',
-    [CardType.SUBJECT]: 'Subject Reference',
-    [CardType.ARRAY]: 'List',
-  };
-  return displayNames[type];
-}
+export const Variant = {
+  ...variantValues,
+  valid: (value: string): value is Variant =>
+    Object.values(variantValues).includes(value as Variant),
+  display: (v: Variant): string => variantDisplayNames[v],
+} as const;
 
 // ============================================================================
-// Security Levels
+// Security (Data sensitivity levels)
 // ============================================================================
 
-export const SecurityLevel = {
+const securityValues = {
   PUBLIC: 'PUBLIC',
   CONFIDENTIAL: 'CONFIDENTIAL',
   RESTRICTED: 'RESTRICTED',
 } as const;
 
-export type SecurityLevel = (typeof SecurityLevel)[keyof typeof SecurityLevel];
+export type Security = (typeof securityValues)[keyof typeof securityValues];
 
-export const securityLevelValidator = v.union(
-  v.literal('PUBLIC'),
-  v.literal('CONFIDENTIAL'),
-  v.literal('RESTRICTED')
-);
+const securityOrder: Record<Security, number> = {
+  PUBLIC: 1,
+  CONFIDENTIAL: 2,
+  RESTRICTED: 3,
+};
 
-export function isSecurityLevel(level: string): level is SecurityLevel {
-  return Object.values(SecurityLevel).includes(level as SecurityLevel);
-}
-
-export function getSecurityLevelOrder(level: SecurityLevel): number {
-  const order: Record<SecurityLevel, number> = {
-    [SecurityLevel.PUBLIC]: 1,
-    [SecurityLevel.CONFIDENTIAL]: 2,
-    [SecurityLevel.RESTRICTED]: 3,
-  };
-  return order[level];
-}
+export const Security = {
+  ...securityValues,
+  valid: (value: string): value is Security =>
+    Object.values(securityValues).includes(value as Security),
+  order: (s: Security): number => securityOrder[s],
+} as const;
 
 // ============================================================================
-// Procedure Types
+// Source (Procedure data sources)
 // ============================================================================
 
-export const ProcedureType = {
+const sourceValues = {
   FORM: 'form',
   IMPORT: 'import',
   API: 'api',
 } as const;
 
-export type ProcedureType = (typeof ProcedureType)[keyof typeof ProcedureType];
+export type Source = (typeof sourceValues)[keyof typeof sourceValues];
 
-export const procedureTypeValidator = v.union(
-  v.literal('form'),
-  v.literal('import'),
-  v.literal('api')
-);
+const sourceDisplayNames: Record<Source, string> = {
+  form: 'Form',
+  import: 'Import',
+  api: 'API',
+};
 
-export function isProcedureType(value: string): value is ProcedureType {
-  return Object.values(ProcedureType).includes(value as ProcedureType);
-}
-
-export function getProcedureTypeDisplayName(type: ProcedureType): string {
-  const displayNames: Record<ProcedureType, string> = {
-    [ProcedureType.FORM]: 'Form',
-    [ProcedureType.IMPORT]: 'Import',
-    [ProcedureType.API]: 'API',
-  };
-  return displayNames[type];
-}
+export const Source = {
+  ...sourceValues,
+  valid: (value: string): value is Source => Object.values(sourceValues).includes(value as Source),
+  display: (s: Source): string => sourceDisplayNames[s],
+} as const;
 
 // ============================================================================
-// Subject Types
+// Subject (Entity types)
 // ============================================================================
 
-export const SubjectType = {
+const subjectValues = {
   BENEFICIARY: 'beneficiary',
   EVENT: 'event',
   EVENT_INSTANCE: 'eventInstance',
 } as const;
 
-export type SubjectType = (typeof SubjectType)[keyof typeof SubjectType];
+export type Subject = (typeof subjectValues)[keyof typeof subjectValues];
 
-export const subjectTypeValidator = v.union(
-  v.literal('beneficiary'),
-  v.literal('event'),
-  v.literal('eventInstance')
-);
+const subjectDisplayNames: Record<Subject, string> = {
+  beneficiary: 'Beneficiary',
+  event: 'Event',
+  eventInstance: 'Event Instance',
+};
 
-export function isSubjectType(value: string): value is SubjectType {
-  return Object.values(SubjectType).includes(value as SubjectType);
-}
-
-export function getSubjectTypeDisplayName(type: SubjectType): string {
-  const displayNames: Record<SubjectType, string> = {
-    [SubjectType.BENEFICIARY]: 'Beneficiary',
-    [SubjectType.EVENT]: 'Event',
-    [SubjectType.EVENT_INSTANCE]: 'Event Instance',
-  };
-  return displayNames[type];
-}
+export const Subject = {
+  ...subjectValues,
+  valid: (value: string): value is Subject =>
+    Object.values(subjectValues).includes(value as Subject),
+  display: (s: Subject): string => subjectDisplayNames[s],
+} as const;
 
 // ============================================================================
-// Operations
+// Operation (CRUD operations)
 // ============================================================================
 
-export const Operation = {
+const operationValues = {
   CREATE: 'create',
   UPDATE: 'update',
 } as const;
 
-export type Operation = (typeof Operation)[keyof typeof Operation];
+export type Operation = (typeof operationValues)[keyof typeof operationValues];
 
-export const operationValidator = v.union(v.literal('create'), v.literal('update'));
-
-export function isOperation(value: string): value is Operation {
-  return Object.values(Operation).includes(value as Operation);
-}
-
-export function getOperationDisplayName(operation: Operation): string {
-  const displayNames: Record<Operation, string> = {
-    [Operation.CREATE]: 'Create',
-    [Operation.UPDATE]: 'Update',
-  };
-  return displayNames[operation];
-}
-
-// ============================================================================
-// Procedure Card (card reference within a procedure)
-// ============================================================================
-
-export const procedureCardValidator = v.object({
-  slug: v.string(),
-  label: v.string(),
-  type: cardTypeValidator,
-  securityLevel: securityLevelValidator,
-  required: v.boolean(),
-  writeTo: v.object({
-    path: v.string(),
-  }),
-  targetSubjectType: v.optional(subjectTypeValidator),
-  requiredCards: v.optional(v.array(v.string())),
-});
-
-export type ProcedureCard = {
-  slug: string;
-  label: string;
-  type: CardType;
-  securityLevel: SecurityLevel;
-  required: boolean;
-  writeTo: { path: string };
-  targetSubjectType?: SubjectType;
-  requiredCards?: string[];
+const operationDisplayNames: Record<Operation, string> = {
+  create: 'Create',
+  update: 'Update',
 };
 
+export const Operation = {
+  ...operationValues,
+  valid: (value: string): value is Operation =>
+    Object.values(operationValues).includes(value as Operation),
+  display: (o: Operation): string => operationDisplayNames[o],
+} as const;
+
 // ============================================================================
-// Evaluation Status
+// EvaluationStatus
 // ============================================================================
 
-export const EvaluationStatus = {
+const evaluationStatusValues = {
   PENDING: 'pending',
   RUNNING: 'running',
   COMPLETED: 'completed',
   FAILED: 'failed',
 } as const;
 
-export type EvaluationStatus = (typeof EvaluationStatus)[keyof typeof EvaluationStatus];
+export type EvaluationStatus = (typeof evaluationStatusValues)[keyof typeof evaluationStatusValues];
 
-export const evaluationStatusValidator = v.union(
-  v.literal('pending'),
-  v.literal('running'),
-  v.literal('completed'),
-  v.literal('failed')
-);
+export const EvaluationStatus = {
+  ...evaluationStatusValues,
+} as const;
 
 // ============================================================================
-// Deliverable Status
+// DeliverableStatus
 // ============================================================================
 
-export const DeliverableStatus = {
+const deliverableStatusValues = {
   ACTIVE: 'active',
   PAUSED: 'paused',
 } as const;
 
-export type DeliverableStatus = (typeof DeliverableStatus)[keyof typeof DeliverableStatus];
+export type DeliverableStatus =
+  (typeof deliverableStatusValues)[keyof typeof deliverableStatusValues];
 
-export const deliverableStatusValidator = v.union(v.literal('active'), v.literal('paused'));
+export const DeliverableStatus = {
+  ...deliverableStatusValues,
+} as const;
 
 // ============================================================================
-// Condition Validators
+// Composite Types (TypeScript only, no validators)
 // ============================================================================
-
-export const timeConditionValidator = v.object({
-  after: v.string(), // HH:mm format
-  before: v.optional(v.string()), // HH:mm format
-});
-
-export const dateConditionValidator = v.object({
-  daysBeforeEvent: v.optional(v.number()),
-  hoursBeforeEvent: v.optional(v.number()),
-});
-
-export const conditionsValidator = v.object({
-  time: v.optional(timeConditionValidator),
-  date: v.optional(dateConditionValidator),
-  dayOfWeek: v.optional(v.array(v.number())), // 0-6, Sunday = 0
-});
 
 export type Conditions = {
   time?: { after: string; before?: string };
@@ -269,16 +188,7 @@ export type Conditions = {
   dayOfWeek?: number[];
 };
 
-// ============================================================================
-// Prerequisite Validator
-// ============================================================================
-
-export const prerequisiteValidator = v.object({
-  deliverableId: v.string(),
-  scope: subjectTypeValidator,
-});
-
-export type Prerequisite = {
-  deliverableId: string;
-  scope: SubjectType;
+export type Required = {
+  cardIds: string[];
+  deliverableIds: string[];
 };

@@ -13,11 +13,11 @@ import type {
   Submission,
   SubmissionResult,
   EvaluateTrigger,
-  DeliverableReadiness,
+  DeliverableResult,
   ExecutionContext,
   ExecutionResult,
   CallbackHandler,
-  SubjectType,
+  Subject,
 } from '$/shared/types.js';
 
 // ============================================================================
@@ -29,8 +29,8 @@ import type {
  * Hooks use verb-based naming with entity namespacing.
  */
 export interface Config {
-  /** Map subject types to host table names for automatic context resolution */
-  subjects?: Partial<Record<SubjectType, string>>;
+  /** Map subjects to host table names for automatic context resolution */
+  subjects?: Partial<Record<Subject, string>>;
   hooks?: {
     /** Called before read operations for authorization */
     read?: (ctx: GenericQueryCtx<GenericDataModel>, organizationId: string) => void | Promise<void>;
@@ -105,12 +105,12 @@ function bridgeInternal(component: any, config?: Config) {
    */
   async function resolveSubject(
     ctx: GenericQueryCtx<GenericDataModel>,
-    subjectType: SubjectType,
+    subject: Subject,
     subjectId: string
   ): Promise<Record<string, unknown>> {
-    const tableName = subjects?.[subjectType];
+    const tableName = subjects?.[subject];
     if (!tableName) {
-      throw new Error(`No table bound for subject type: ${subjectType}`);
+      throw new Error(`No table bound for subject: ${subject}`);
     }
 
     // Query the host's table by UUID
@@ -156,10 +156,10 @@ function bridgeInternal(component: any, config?: Config) {
      */
     resolve: async (
       ctx: GenericQueryCtx<GenericDataModel>,
-      subjectType: SubjectType,
+      subject: Subject,
       subjectId: string
     ): Promise<Record<string, unknown>> => {
-      return resolveSubject(ctx, subjectType, subjectId);
+      return resolveSubject(ctx, subject, subjectId);
     },
 
     /**
@@ -194,7 +194,7 @@ function bridgeInternal(component: any, config?: Config) {
      * const result = await b.submit(ctx, {
      *   procedureId: 'proc_123',
      *   organizationId: 'org_456',
-     *   subjectType: 'beneficiary',
+     *   subject: 'beneficiary',
      *   subjectId: 'ben_789',
      *   values: { firstName: 'John', lastName: 'Doe' },
      * });
@@ -220,14 +220,14 @@ function bridgeInternal(component: any, config?: Config) {
      * // With auto-resolution (subjects bound):
      * const readiness = await b.evaluate(ctx, {
      *   organizationId: 'org_456',
-     *   subjectType: 'beneficiary',
+     *   subject: 'beneficiary',
      *   subjectId: 'ben_789',
      * });
      *
      * // With explicit variables:
      * const readiness = await b.evaluate(ctx, {
      *   organizationId: 'org_456',
-     *   subjectType: 'beneficiary',
+     *   subject: 'beneficiary',
      *   subjectId: 'ben_789',
      *   variables: { firstName: 'John', lastName: 'Doe' },
      *   changedFields: ['email'],
@@ -237,12 +237,12 @@ function bridgeInternal(component: any, config?: Config) {
     evaluate: async (
       ctx: GenericMutationCtx<GenericDataModel>,
       trigger: EvaluateTrigger
-    ): Promise<DeliverableReadiness[]> => {
+    ): Promise<DeliverableResult[]> => {
       let { variables } = trigger;
 
       // Auto-resolve if no variables provided and subjects are bound
-      if (!variables && subjects?.[trigger.subjectType]) {
-        variables = await resolveSubject(ctx, trigger.subjectType, trigger.subjectId);
+      if (!variables && subjects?.[trigger.subject]) {
+        variables = await resolveSubject(ctx, trigger.subject, trigger.subjectId);
       }
 
       return ctx.runMutation(component.public.deliverable.evaluate, {
@@ -258,7 +258,7 @@ function bridgeInternal(component: any, config?: Config) {
      * @example
      * ```typescript
      * const result = await b.execute(deliverable, {
-     *   subjectType: 'beneficiary',
+     *   subject: 'beneficiary',
      *   subjectId: 'ben_789',
      *   variables: { firstName: 'John' },
      * });

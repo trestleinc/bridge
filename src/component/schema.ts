@@ -2,7 +2,7 @@
  * @trestleinc/bridge - Component Schema
  *
  * Defines the database tables for the Bridge component:
- * - cards: Field definitions with types and security levels
+ * - cards: Field definitions with variants and security levels
  * - procedures: Forms/imports that collect card data
  * - deliverables: Reactive triggers with conditions
  * - evaluations: Execution records when deliverables trigger
@@ -15,7 +15,7 @@ import { v } from 'convex/values';
 // Inline Validators (to avoid circular dependencies with shared/)
 // ============================================================================
 
-const cardTypeValidator = v.union(
+const variantValidator = v.union(
   v.literal('STRING'),
   v.literal('TEXT'),
   v.literal('NUMBER'),
@@ -30,15 +30,15 @@ const cardTypeValidator = v.union(
   v.literal('ARRAY')
 );
 
-const securityLevelValidator = v.union(
+const securityValidator = v.union(
   v.literal('PUBLIC'),
   v.literal('CONFIDENTIAL'),
   v.literal('RESTRICTED')
 );
 
-const procedureTypeValidator = v.union(v.literal('form'), v.literal('import'), v.literal('api'));
+const sourceValidator = v.union(v.literal('form'), v.literal('import'), v.literal('api'));
 
-const subjectTypeValidator = v.union(
+const subjectValidator = v.union(
   v.literal('beneficiary'),
   v.literal('event'),
   v.literal('eventInstance')
@@ -47,16 +47,11 @@ const subjectTypeValidator = v.union(
 const operationValidator = v.union(v.literal('create'), v.literal('update'));
 
 const procedureCardValidator = v.object({
-  slug: v.string(),
-  label: v.string(),
-  type: cardTypeValidator,
-  securityLevel: securityLevelValidator,
+  cardId: v.string(),
   required: v.boolean(),
   writeTo: v.object({
     path: v.string(),
   }),
-  targetSubjectType: v.optional(subjectTypeValidator),
-  requiredCards: v.optional(v.array(v.string())),
 });
 
 const conditionsValidator = v.object({
@@ -75,9 +70,9 @@ const conditionsValidator = v.object({
   dayOfWeek: v.optional(v.array(v.number())),
 });
 
-const prerequisiteValidator = v.object({
-  deliverableId: v.string(),
-  scope: subjectTypeValidator,
+const requiredValidator = v.object({
+  cardIds: v.array(v.string()),
+  deliverableIds: v.array(v.string()),
 });
 
 const evaluationStatusValidator = v.union(
@@ -95,7 +90,7 @@ const deliverableStatusValidator = v.union(v.literal('active'), v.literal('pause
 
 export default defineSchema({
   /**
-   * Cards - Field definitions with types and security levels
+   * Cards - Field definitions with variants and security levels
    *
    * Cards are the atomic building blocks of the Bridge data model.
    * Each card represents a single data field that can be collected.
@@ -105,16 +100,16 @@ export default defineSchema({
     organizationId: v.string(),
     slug: v.string(),
     label: v.string(),
-    type: cardTypeValidator,
-    securityLevel: securityLevelValidator,
-    subjectType: subjectTypeValidator,
+    variant: variantValidator,
+    security: securityValidator,
+    subject: subjectValidator,
     createdBy: v.string(),
     createdAt: v.number(),
   })
     .index('by_uuid', ['id'])
     .index('by_organization', ['organizationId'])
     .index('by_slug', ['organizationId', 'slug'])
-    .index('by_subject', ['organizationId', 'subjectType']),
+    .index('by_subject', ['organizationId', 'subject']),
 
   /**
    * Procedures - Forms/imports that collect card data
@@ -127,10 +122,10 @@ export default defineSchema({
     organizationId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    type: procedureTypeValidator,
+    source: sourceValidator,
     subject: v.optional(
       v.object({
-        type: subjectTypeValidator,
+        type: subjectValidator,
         operation: operationValidator,
       })
     ),
@@ -140,7 +135,7 @@ export default defineSchema({
   })
     .index('by_uuid', ['id'])
     .index('by_organization', ['organizationId'])
-    .index('by_type', ['organizationId', 'type']),
+    .index('by_source', ['organizationId', 'source']),
 
   /**
    * Deliverables - Reactive triggers with conditions
@@ -154,11 +149,10 @@ export default defineSchema({
     organizationId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    subjectType: subjectTypeValidator,
-    requiredCards: v.array(v.string()),
+    subject: subjectValidator,
+    required: requiredValidator,
     callbackUrl: v.optional(v.string()),
     callbackAction: v.optional(v.string()),
-    prerequisites: v.optional(v.array(prerequisiteValidator)),
     conditions: v.optional(conditionsValidator),
     status: deliverableStatusValidator,
     createdAt: v.number(),
@@ -166,7 +160,7 @@ export default defineSchema({
   })
     .index('by_uuid', ['id'])
     .index('by_organization', ['organizationId'])
-    .index('by_subject_type', ['organizationId', 'subjectType']),
+    .index('by_subject', ['organizationId', 'subject']),
 
   /**
    * Evaluations - Execution records when deliverables trigger
@@ -179,7 +173,7 @@ export default defineSchema({
     deliverableId: v.string(),
     organizationId: v.string(),
     context: v.object({
-      subjectType: v.string(),
+      subject: v.string(),
       subjectId: v.string(),
       changedFields: v.optional(v.array(v.string())),
     }),

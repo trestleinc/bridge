@@ -6,28 +6,26 @@
  */
 
 import type {
-  CardType,
-  SecurityLevel,
-  ProcedureType,
-  SubjectType,
+  Variant,
+  Security,
+  Source,
+  Subject,
   Operation,
-  ProcedureCard,
   Conditions,
-  Prerequisite,
+  Required,
   EvaluationStatus,
   DeliverableStatus,
 } from './validators.js';
 
 // Re-export validator types for convenience
 export type {
-  CardType,
-  SecurityLevel,
-  ProcedureType,
-  SubjectType,
+  Variant,
+  Security,
+  Source,
+  Subject,
   Operation,
-  ProcedureCard,
   Conditions,
-  Prerequisite,
+  Required,
   EvaluationStatus,
   DeliverableStatus,
 };
@@ -37,7 +35,7 @@ export type {
 // ============================================================================
 
 /**
- * A Card represents a single data field definition with type and security metadata.
+ * A Card represents a single data field definition with variant and security metadata.
  * Cards are the atomic building blocks of the Bridge data model.
  */
 export interface Card {
@@ -45,9 +43,9 @@ export interface Card {
   organizationId: string;
   slug: string;
   label: string;
-  type: CardType;
-  securityLevel: SecurityLevel;
-  subjectType: SubjectType;
+  variant: Variant;
+  security: Security;
+  subject: Subject;
   createdBy: string;
   createdAt: number;
 }
@@ -56,15 +54,24 @@ export interface CardInput {
   organizationId: string;
   slug: string;
   label: string;
-  type: CardType;
-  securityLevel: SecurityLevel;
-  subjectType: SubjectType;
+  variant: Variant;
+  security: Security;
+  subject: Subject;
   createdBy: string;
 }
 
 // ============================================================================
 // Procedure (Data Collection Definition)
 // ============================================================================
+
+/**
+ * A card reference within a procedure, with collection-specific config.
+ */
+export interface ProcedureCard {
+  cardId: string;
+  required: boolean;
+  writeTo: { path: string };
+}
 
 /**
  * A Procedure defines how data is collected through forms, imports, or APIs.
@@ -75,9 +82,9 @@ export interface Procedure {
   organizationId: string;
   name: string;
   description?: string;
-  type: ProcedureType;
+  source: Source;
   subject?: {
-    type: SubjectType;
+    type: Subject;
     operation: Operation;
   };
   cards: ProcedureCard[];
@@ -90,9 +97,9 @@ export interface ProcedureInput {
   organizationId: string;
   name: string;
   description?: string;
-  type: ProcedureType;
+  source: Source;
   subject?: {
-    type: SubjectType;
+    type: Subject;
     operation: Operation;
   };
   cards: ProcedureCard[];
@@ -101,7 +108,7 @@ export interface ProcedureInput {
 export interface ProcedureUpdate {
   name?: string;
   description?: string;
-  type?: ProcedureType;
+  source?: Source;
   cards?: ProcedureCard[];
 }
 
@@ -119,11 +126,10 @@ export interface Deliverable {
   organizationId: string;
   name: string;
   description?: string;
-  subjectType: SubjectType;
-  requiredCards: string[]; // Card slugs that must be present
-  callbackUrl?: string; // HTTP callback when triggered
-  callbackAction?: string; // Convex action reference
-  prerequisites?: Prerequisite[];
+  subject: Subject;
+  required: Required;
+  callbackUrl?: string;
+  callbackAction?: string;
   conditions?: Conditions;
   status: DeliverableStatus;
   createdAt: number;
@@ -135,18 +141,17 @@ export interface DeliverableInput {
   organizationId: string;
   name: string;
   description?: string;
-  subjectType: SubjectType;
-  requiredCards: string[];
+  subject: Subject;
+  required: Required;
   callbackUrl?: string;
   callbackAction?: string;
-  prerequisites?: Prerequisite[];
   conditions?: Conditions;
 }
 
 export interface DeliverableUpdate {
   name?: string;
   description?: string;
-  requiredCards?: string[];
+  required?: Required;
   status?: DeliverableStatus;
   conditions?: Conditions;
 }
@@ -175,7 +180,7 @@ export interface Evaluation {
  * Context about what triggered the evaluation.
  */
 export interface EvaluationContext {
-  subjectType: SubjectType;
+  subject: Subject;
   subjectId: string;
   changedFields?: string[];
 }
@@ -198,7 +203,7 @@ export interface EvaluationResult {
  */
 export interface EvaluateDeliverablesInput {
   organizationId: string;
-  subjectType: SubjectType;
+  subject: Subject;
   subjectId: string;
   variables: Record<string, unknown>;
   changedFields?: string[];
@@ -207,11 +212,13 @@ export interface EvaluateDeliverablesInput {
 /**
  * Result of checking a deliverable's readiness.
  */
-export interface DeliverableReadiness {
+export interface DeliverableResult {
   deliverableId: string;
   ready: boolean;
-  missingCards: string[];
-  missingPrerequisites: string[];
+  unmet: {
+    cardIds: string[];
+    deliverableIds: string[];
+  };
   evaluationId?: string;
 }
 
@@ -225,15 +232,15 @@ export interface ListOptions {
 }
 
 export interface CardListOptions extends ListOptions {
-  subjectType?: SubjectType;
+  subject?: Subject;
 }
 
 export interface ProcedureListOptions extends ListOptions {
-  type?: ProcedureType;
+  source?: Source;
 }
 
 export interface DeliverableListOptions extends ListOptions {
-  subjectType?: SubjectType;
+  subject?: Subject;
 }
 
 export interface EvaluationListOptions extends ListOptions {
@@ -250,7 +257,7 @@ export interface EvaluationListOptions extends ListOptions {
 export interface Submission {
   procedureId: string;
   organizationId: string;
-  subjectType: SubjectType;
+  subject: Subject;
   subjectId: string;
   values: Record<string, unknown>;
 }
@@ -280,7 +287,7 @@ export interface SubmissionResult {
  * Context passed to callback handlers when executing a deliverable.
  */
 export interface ExecutionContext {
-  subjectType: SubjectType;
+  subject: Subject;
   subjectId: string;
   variables: Record<string, unknown>;
   changedFields?: string[];
@@ -309,7 +316,7 @@ export type CallbackHandler = (
  */
 export interface EvaluateTrigger {
   organizationId: string;
-  subjectType: SubjectType;
+  subject: Subject;
   subjectId: string;
   variables?: Record<string, unknown>;
   changedFields?: string[];

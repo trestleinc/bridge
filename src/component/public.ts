@@ -12,7 +12,7 @@ import { getLogger } from '$/component/logger';
 // Validators
 // ============================================================================
 
-const cardTypeValidator = v.union(
+const variantValidator = v.union(
   v.literal('STRING'),
   v.literal('TEXT'),
   v.literal('NUMBER'),
@@ -27,15 +27,15 @@ const cardTypeValidator = v.union(
   v.literal('ARRAY')
 );
 
-const securityLevelValidator = v.union(
+const securityValidator = v.union(
   v.literal('PUBLIC'),
   v.literal('CONFIDENTIAL'),
   v.literal('RESTRICTED')
 );
 
-const procedureTypeValidator = v.union(v.literal('form'), v.literal('import'), v.literal('api'));
+const sourceValidator = v.union(v.literal('form'), v.literal('import'), v.literal('api'));
 
-const subjectTypeValidator = v.union(
+const subjectValidator = v.union(
   v.literal('beneficiary'),
   v.literal('event'),
   v.literal('eventInstance')
@@ -44,14 +44,9 @@ const subjectTypeValidator = v.union(
 const operationValidator = v.union(v.literal('create'), v.literal('update'));
 
 const procedureCardValidator = v.object({
-  slug: v.string(),
-  label: v.string(),
-  type: cardTypeValidator,
-  securityLevel: securityLevelValidator,
+  cardId: v.string(),
   required: v.boolean(),
   writeTo: v.object({ path: v.string() }),
-  targetSubjectType: v.optional(subjectTypeValidator),
-  requiredCards: v.optional(v.array(v.string())),
 });
 
 const conditionsValidator = v.object({
@@ -62,9 +57,9 @@ const conditionsValidator = v.object({
   dayOfWeek: v.optional(v.array(v.number())),
 });
 
-const prerequisiteValidator = v.object({
-  deliverableId: v.string(),
-  scope: subjectTypeValidator,
+const requiredValidator = v.object({
+  cardIds: v.array(v.string()),
+  deliverableIds: v.array(v.string()),
 });
 
 const deliverableStatusValidator = v.union(v.literal('active'), v.literal('paused'));
@@ -104,16 +99,16 @@ const _cardFind = query({
 const _cardList = query({
   args: {
     organizationId: v.string(),
-    subjectType: v.optional(subjectTypeValidator),
+    subject: v.optional(subjectValidator),
     limit: v.optional(v.number()),
   },
   returns: v.any(),
-  handler: async (ctx, { organizationId, subjectType, limit = 100 }) => {
-    if (subjectType) {
+  handler: async (ctx, { organizationId, subject, limit = 100 }) => {
+    if (subject) {
       return ctx.db
         .query('cards')
         .withIndex('by_subject', (q) =>
-          q.eq('organizationId', organizationId).eq('subjectType', subjectType)
+          q.eq('organizationId', organizationId).eq('subject', subject)
         )
         .take(limit);
     }
@@ -129,9 +124,9 @@ const _cardCreate = mutation({
     organizationId: v.string(),
     slug: v.string(),
     label: v.string(),
-    type: cardTypeValidator,
-    securityLevel: securityLevelValidator,
-    subjectType: subjectTypeValidator,
+    variant: variantValidator,
+    security: securityValidator,
+    subject: subjectValidator,
     createdBy: v.string(),
   },
   returns: v.any(),
@@ -146,9 +141,9 @@ const _cardCreate = mutation({
       .first();
 
     if (existing) {
-      if (existing.type !== args.type) {
+      if (existing.variant !== args.variant) {
         throw new Error(
-          `Card "${args.slug}" exists with type "${existing.type}", cannot change to "${args.type}"`
+          `Card "${args.slug}" exists with variant "${existing.variant}", cannot change to "${args.variant}"`
         );
       }
       logger.info('Card exists, returning', { slug: args.slug });
@@ -188,15 +183,15 @@ const _procedureGet = query({
 const _procedureList = query({
   args: {
     organizationId: v.string(),
-    type: v.optional(procedureTypeValidator),
+    source: v.optional(sourceValidator),
     limit: v.optional(v.number()),
   },
   returns: v.any(),
-  handler: async (ctx, { organizationId, type, limit = 50 }) => {
-    if (type) {
+  handler: async (ctx, { organizationId, source, limit = 50 }) => {
+    if (source) {
       return ctx.db
         .query('procedures')
-        .withIndex('by_type', (q) => q.eq('organizationId', organizationId).eq('type', type))
+        .withIndex('by_source', (q) => q.eq('organizationId', organizationId).eq('source', source))
         .order('desc')
         .take(limit);
     }
@@ -214,8 +209,8 @@ const _procedureCreate = mutation({
     organizationId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    type: procedureTypeValidator,
-    subject: v.optional(v.object({ type: subjectTypeValidator, operation: operationValidator })),
+    source: sourceValidator,
+    subject: v.optional(v.object({ type: subjectValidator, operation: operationValidator })),
     cards: v.array(procedureCardValidator),
   },
   returns: v.any(),
@@ -223,26 +218,15 @@ const _procedureCreate = mutation({
     const logger = getLogger(['procedure']);
     const now = Date.now();
 
-    // Auto-create cards
+    // Validate that all referenced cards exist
     for (const c of args.cards) {
-      const existing = await ctx.db
+      const card = await ctx.db
         .query('cards')
-        .withIndex('by_slug', (q) => q.eq('organizationId', args.organizationId).eq('slug', c.slug))
-        .first();
+        .withIndex('by_uuid', (q) => q.eq('id', c.cardId))
+        .unique();
 
-      if (!existing && args.subject) {
-        await ctx.db.insert('cards', {
-          id: crypto.randomUUID(),
-          organizationId: args.organizationId,
-          slug: c.slug,
-          label: c.label,
-          type: c.type,
-          securityLevel: c.securityLevel,
-          subjectType: args.subject.type,
-          createdBy: `procedure:${args.id}`,
-          createdAt: now,
-        });
-        logger.info('Auto-created card', { slug: c.slug, procedureId: args.id });
+      if (!card) {
+        throw new Error(`Card not found: ${c.cardId}`);
       }
     }
 
@@ -257,7 +241,7 @@ const _procedureUpdate = mutation({
     id: v.string(),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
-    type: v.optional(procedureTypeValidator),
+    source: v.optional(sourceValidator),
     cards: v.optional(v.array(procedureCardValidator)),
   },
   returns: v.any(),
@@ -306,7 +290,7 @@ const _procedureSubmit = mutation({
   args: {
     procedureId: v.string(),
     organizationId: v.string(),
-    subjectType: subjectTypeValidator,
+    subject: subjectValidator,
     subjectId: v.string(),
     values: v.any(),
   },
@@ -336,11 +320,22 @@ const _procedureSubmit = mutation({
     const errors: Array<{ field: string; message: string }> = [];
     const validated: string[] = [];
 
-    for (const card of proc.cards) {
+    for (const ref of proc.cards) {
+      // Look up the card definition
+      const card = await ctx.db
+        .query('cards')
+        .withIndex('by_uuid', (q) => q.eq('id', ref.cardId))
+        .unique();
+
+      if (!card) {
+        errors.push({ field: ref.cardId, message: `Card not found: ${ref.cardId}` });
+        continue;
+      }
+
       const value = args.values?.[card.slug];
 
       // Check required fields
-      if (card.required && (value === undefined || value === null || value === '')) {
+      if (ref.required && (value === undefined || value === null || value === '')) {
         errors.push({ field: card.slug, message: `Required field is missing` });
         continue;
       }
@@ -350,10 +345,10 @@ const _procedureSubmit = mutation({
         continue;
       }
 
-      // Type validation
-      const typeError = validateType(card.type, value);
-      if (typeError) {
-        errors.push({ field: card.slug, message: typeError });
+      // Variant validation
+      const variantError = validateVariant(card.variant, value);
+      if (variantError) {
+        errors.push({ field: card.slug, message: variantError });
         continue;
       }
 
@@ -376,10 +371,10 @@ const _procedureSubmit = mutation({
 });
 
 /**
- * Validate a value against a card type.
+ * Validate a value against a card variant.
  */
-function validateType(
-  type:
+function validateVariant(
+  variant:
     | 'STRING'
     | 'TEXT'
     | 'NUMBER'
@@ -394,7 +389,7 @@ function validateType(
     | 'ARRAY',
   value: unknown
 ): string | null {
-  switch (type) {
+  switch (variant) {
     case 'STRING':
     case 'TEXT':
       if (typeof value !== 'string') return `Expected string, got ${typeof value}`;
@@ -466,17 +461,17 @@ const _deliverableGet = query({
 const _deliverableList = query({
   args: {
     organizationId: v.string(),
-    subjectType: v.optional(subjectTypeValidator),
+    subject: v.optional(subjectValidator),
     status: v.optional(deliverableStatusValidator),
     limit: v.optional(v.number()),
   },
   returns: v.any(),
-  handler: async (ctx, { organizationId, subjectType, status, limit = 50 }) => {
-    const results = subjectType
+  handler: async (ctx, { organizationId, subject, status, limit = 50 }) => {
+    const results = subject
       ? await ctx.db
           .query('deliverables')
-          .withIndex('by_subject_type', (q) =>
-            q.eq('organizationId', organizationId).eq('subjectType', subjectType)
+          .withIndex('by_subject', (q) =>
+            q.eq('organizationId', organizationId).eq('subject', subject)
           )
           .order('desc')
           .take(limit)
@@ -495,11 +490,10 @@ const _deliverableCreate = mutation({
     organizationId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    subjectType: subjectTypeValidator,
-    requiredCards: v.array(v.string()),
+    subject: subjectValidator,
+    required: requiredValidator,
     callbackUrl: v.optional(v.string()),
     callbackAction: v.optional(v.string()),
-    prerequisites: v.optional(v.array(prerequisiteValidator)),
     conditions: v.optional(conditionsValidator),
   },
   returns: v.any(),
@@ -522,7 +516,7 @@ const _deliverableUpdate = mutation({
     id: v.string(),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
-    requiredCards: v.optional(v.array(v.string())),
+    required: v.optional(requiredValidator),
     status: v.optional(deliverableStatusValidator),
     conditions: v.optional(conditionsValidator),
   },
@@ -549,7 +543,7 @@ const _deliverableUpdate = mutation({
 const _deliverableEvaluate = mutation({
   args: {
     organizationId: v.string(),
-    subjectType: subjectTypeValidator,
+    subject: subjectValidator,
     subjectId: v.string(),
     variables: v.any(),
     changedFields: v.optional(v.array(v.string())),
@@ -560,15 +554,17 @@ const _deliverableEvaluate = mutation({
     const results: Array<{
       deliverableId: string;
       ready: boolean;
-      missingCards: string[];
-      missingPrerequisites: string[];
+      unmet: {
+        cardIds: string[];
+        deliverableIds: string[];
+      };
       evaluationId?: string;
     }> = [];
 
     const deliverables = await ctx.db
       .query('deliverables')
-      .withIndex('by_subject_type', (q) =>
-        q.eq('organizationId', args.organizationId).eq('subjectType', args.subjectType)
+      .withIndex('by_subject', (q) =>
+        q.eq('organizationId', args.organizationId).eq('subject', args.subject)
       )
       .filter((q) => q.eq(q.field('status'), 'active'))
       .collect();
@@ -577,40 +573,37 @@ const _deliverableEvaluate = mutation({
 
     for (const d of deliverables) {
       if (args.changedFields?.length) {
-        const relevant = d.requiredCards.some((c) => args.changedFields?.includes(c));
+        const relevant = d.required.cardIds.some((c) => args.changedFields?.includes(c));
         if (!relevant) continue;
       }
 
       // Check required cards
-      const missingCards: string[] = [];
-      for (const slug of d.requiredCards) {
-        const val = args.variables?.[slug];
-        if (val === undefined || val === null || val === '') missingCards.push(slug);
+      const unmetCardIds: string[] = [];
+      for (const cardId of d.required.cardIds) {
+        const val = args.variables?.[cardId];
+        if (val === undefined || val === null || val === '') unmetCardIds.push(cardId);
       }
 
-      // Check prerequisites - look for completed evaluations for this subject
-      const missingPrerequisites: string[] = [];
-      if (d.prerequisites?.length) {
-        for (const prereq of d.prerequisites) {
-          // Find a completed evaluation for this prerequisite deliverable and subject
-          const completedEval = await ctx.db
-            .query('evaluations')
-            .withIndex('by_deliverable', (q) => q.eq('deliverableId', prereq.deliverableId))
-            .filter((q) =>
-              q.and(
-                q.eq(q.field('context.subjectId'), args.subjectId),
-                q.eq(q.field('status'), 'completed')
-              )
+      // Check required deliverables - look for completed evaluations for this subject
+      const unmetDeliverableIds: string[] = [];
+      for (const deliverableId of d.required.deliverableIds) {
+        const completedEval = await ctx.db
+          .query('evaluations')
+          .withIndex('by_deliverable', (q) => q.eq('deliverableId', deliverableId))
+          .filter((q) =>
+            q.and(
+              q.eq(q.field('context.subjectId'), args.subjectId),
+              q.eq(q.field('status'), 'completed')
             )
-            .first();
+          )
+          .first();
 
-          if (!completedEval) {
-            missingPrerequisites.push(prereq.deliverableId);
-          }
+        if (!completedEval) {
+          unmetDeliverableIds.push(deliverableId);
         }
       }
 
-      const ready = missingCards.length === 0 && missingPrerequisites.length === 0;
+      const ready = unmetCardIds.length === 0 && unmetDeliverableIds.length === 0;
 
       if (ready) {
         const evalId = crypto.randomUUID();
@@ -620,7 +613,7 @@ const _deliverableEvaluate = mutation({
           deliverableId: d.id,
           organizationId: args.organizationId,
           context: {
-            subjectType: args.subjectType,
+            subject: args.subject,
             subjectId: args.subjectId,
             changedFields: args.changedFields,
           },
@@ -633,16 +626,14 @@ const _deliverableEvaluate = mutation({
         results.push({
           deliverableId: d.id,
           ready: true,
-          missingCards: [],
-          missingPrerequisites: [],
+          unmet: { cardIds: [], deliverableIds: [] },
           evaluationId: evalId,
         });
       } else {
         results.push({
           deliverableId: d.id,
           ready: false,
-          missingCards,
-          missingPrerequisites,
+          unmet: { cardIds: unmetCardIds, deliverableIds: unmetDeliverableIds },
         });
       }
     }

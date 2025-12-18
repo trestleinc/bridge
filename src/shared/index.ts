@@ -1,63 +1,46 @@
 /**
  * @trestleinc/bridge - Shared exports
  *
- * Types and validators that can be used in any environment.
+ * Types and utilities that can be used in any environment.
  */
 
-// Validators (includes Convex validators and runtime type guards)
+// Enums with attached methods
 export {
-  // Card types
-  CardType,
-  cardTypeValidator,
-  isCardType,
-  getCardTypeDisplayName,
+  // Card field types
+  Variant,
   // Security levels
-  SecurityLevel,
-  securityLevelValidator,
-  isSecurityLevel,
-  getSecurityLevelOrder,
-  // Procedure types
-  ProcedureType,
-  procedureTypeValidator,
-  isProcedureType,
-  getProcedureTypeDisplayName,
-  // Subject types
-  SubjectType,
-  subjectTypeValidator,
-  isSubjectType,
-  getSubjectTypeDisplayName,
-  // Operations
+  Security,
+  // Procedure data sources
+  Source,
+  // Subject entity types
+  Subject,
+  // CRUD operations
   Operation,
-  operationValidator,
-  isOperation,
-  getOperationDisplayName,
-  // Procedure card
-  procedureCardValidator,
   // Evaluation status
   EvaluationStatus,
-  evaluationStatusValidator,
   // Deliverable status
   DeliverableStatus,
-  deliverableStatusValidator,
-  // Conditions
-  timeConditionValidator,
-  dateConditionValidator,
-  conditionsValidator,
-  // Prerequisites
-  prerequisiteValidator,
 } from './validators.js';
 
-// Type exports
+// Composite types
+export type { Conditions, Required } from './validators.js';
+
+// Re-export types from validators
 export type {
-  ProcedureCard,
-  Conditions,
-  Prerequisite,
+  Variant as VariantType,
+  Security as SecurityType,
+  Source as SourceType,
+  Subject as SubjectType,
+  Operation as OperationType,
+  EvaluationStatus as EvaluationStatusType,
+  DeliverableStatus as DeliverableStatusType,
 } from './validators.js';
 
 // Entity types
 export type {
   Card,
   CardInput,
+  ProcedureCard,
   Procedure,
   ProcedureInput,
   ProcedureUpdate,
@@ -68,7 +51,7 @@ export type {
   EvaluationContext,
   EvaluationResult,
   EvaluateDeliverablesInput,
-  DeliverableReadiness,
+  DeliverableResult,
   ListOptions,
   CardListOptions,
   ProcedureListOptions,
