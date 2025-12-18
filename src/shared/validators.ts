@@ -10,35 +10,35 @@
 // ============================================================================
 
 const variantValues = {
-  STRING: 'STRING',
-  TEXT: 'TEXT',
-  NUMBER: 'NUMBER',
-  BOOLEAN: 'BOOLEAN',
-  DATE: 'DATE',
-  EMAIL: 'EMAIL',
-  URL: 'URL',
-  PHONE: 'PHONE',
-  SSN: 'SSN',
-  ADDRESS: 'ADDRESS',
-  SUBJECT: 'SUBJECT',
-  ARRAY: 'ARRAY',
+  STRING: "STRING",
+  TEXT: "TEXT",
+  NUMBER: "NUMBER",
+  BOOLEAN: "BOOLEAN",
+  DATE: "DATE",
+  EMAIL: "EMAIL",
+  URL: "URL",
+  PHONE: "PHONE",
+  SSN: "SSN",
+  ADDRESS: "ADDRESS",
+  SUBJECT: "SUBJECT",
+  ARRAY: "ARRAY",
 } as const;
 
 export type Variant = (typeof variantValues)[keyof typeof variantValues];
 
 const variantDisplayNames: Record<Variant, string> = {
-  STRING: 'Text',
-  TEXT: 'Long Text',
-  NUMBER: 'Number',
-  BOOLEAN: 'Yes/No',
-  DATE: 'Date',
-  EMAIL: 'Email',
-  URL: 'URL',
-  PHONE: 'Phone',
-  SSN: 'SSN',
-  ADDRESS: 'Address',
-  SUBJECT: 'Subject Reference',
-  ARRAY: 'List',
+  STRING: "Text",
+  TEXT: "Long Text",
+  NUMBER: "Number",
+  BOOLEAN: "Yes/No",
+  DATE: "Date",
+  EMAIL: "Email",
+  URL: "URL",
+  PHONE: "Phone",
+  SSN: "SSN",
+  ADDRESS: "Address",
+  SUBJECT: "Subject Reference",
+  ARRAY: "List",
 };
 
 export const Variant = {
@@ -53,9 +53,9 @@ export const Variant = {
 // ============================================================================
 
 const securityValues = {
-  PUBLIC: 'PUBLIC',
-  CONFIDENTIAL: 'CONFIDENTIAL',
-  RESTRICTED: 'RESTRICTED',
+  PUBLIC: "PUBLIC",
+  CONFIDENTIAL: "CONFIDENTIAL",
+  RESTRICTED: "RESTRICTED",
 } as const;
 
 export type Security = (typeof securityValues)[keyof typeof securityValues];
@@ -78,17 +78,17 @@ export const Security = {
 // ============================================================================
 
 const sourceValues = {
-  FORM: 'form',
-  IMPORT: 'import',
-  API: 'api',
+  FORM: "form",
+  IMPORT: "import",
+  API: "api",
 } as const;
 
 export type Source = (typeof sourceValues)[keyof typeof sourceValues];
 
 const sourceDisplayNames: Record<Source, string> = {
-  form: 'Form',
-  import: 'Import',
-  api: 'API',
+  form: "Form",
+  import: "Import",
+  api: "API",
 };
 
 export const Source = {
@@ -112,17 +112,17 @@ export type Subject = string;
 // ============================================================================
 
 const operationValues = {
-  CREATE: 'create',
-  UPDATE: 'update',
-  DELETE: 'delete',
+  CREATE: "create",
+  UPDATE: "update",
+  DELETE: "delete",
 } as const;
 
 export type Operation = (typeof operationValues)[keyof typeof operationValues];
 
 const operationDisplayNames: Record<Operation, string> = {
-  create: 'Create',
-  update: 'Update',
-  delete: 'Delete',
+  create: "Create",
+  update: "Update",
+  delete: "Delete",
 };
 
 export const Operation = {
@@ -137,10 +137,10 @@ export const Operation = {
 // ============================================================================
 
 const evaluationStatusValues = {
-  PENDING: 'pending',
-  RUNNING: 'running',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
+  PENDING: "pending",
+  RUNNING: "running",
+  COMPLETED: "completed",
+  FAILED: "failed",
 } as const;
 
 export type EvaluationStatus = (typeof evaluationStatusValues)[keyof typeof evaluationStatusValues];
@@ -154,12 +154,12 @@ export const EvaluationStatus = {
 // ============================================================================
 
 const deliverableStatusValues = {
-  ACTIVE: 'active',
-  PAUSED: 'paused',
+  ACTIVE: "active",
+  PAUSED: "paused",
 } as const;
 
-export type DeliverableStatus =
-  (typeof deliverableStatusValues)[keyof typeof deliverableStatusValues];
+export type DeliverableStatus
+  = (typeof deliverableStatusValues)[keyof typeof deliverableStatusValues];
 
 export const DeliverableStatus = {
   ...deliverableStatusValues,
@@ -169,12 +169,12 @@ export const DeliverableStatus = {
 // Composite Types (TypeScript only, no validators)
 // ============================================================================
 
-export type Schedule = {
+export interface Schedule {
   at?: number;
   cron?: string;
-};
+}
 
-export type Required = {
+export interface Required {
   cardIds: string[];
   deliverableIds: string[];
-};
+}
