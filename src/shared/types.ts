@@ -182,7 +182,7 @@ export interface Evaluation {
 export interface EvaluationContext {
   subject: Subject;
   subjectId: string;
-  changedFields?: string[];
+  mutated?: string[];
 }
 
 /**
@@ -206,7 +206,7 @@ export interface EvaluateDeliverablesInput {
   subject: Subject;
   subjectId: string;
   variables: Record<string, unknown>;
-  changedFields?: string[];
+  mutated?: string[];
 }
 
 /**
@@ -290,7 +290,7 @@ export interface ExecutionContext {
   subject: Subject;
   subjectId: string;
   variables: Record<string, unknown>;
-  changedFields?: string[];
+  mutated?: string[];
 }
 
 /**
@@ -319,5 +319,5 @@ export interface EvaluateTrigger {
   subject: Subject;
   subjectId: string;
   variables?: Record<string, unknown>;
-  changedFields?: string[];
+  mutated?: string[];
 }

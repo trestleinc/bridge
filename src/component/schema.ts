@@ -175,7 +175,7 @@ export default defineSchema({
     context: v.object({
       subject: v.string(),
       subjectId: v.string(),
-      changedFields: v.optional(v.array(v.string())),
+      mutated: v.optional(v.array(v.string())),
     }),
     variables: v.any(),
     status: evaluationStatusValidator,

@@ -546,7 +546,7 @@ const _deliverableEvaluate = mutation({
     subject: subjectValidator,
     subjectId: v.string(),
     variables: v.any(),
-    changedFields: v.optional(v.array(v.string())),
+    mutated: v.optional(v.array(v.string())),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -572,8 +572,8 @@ const _deliverableEvaluate = mutation({
     logger.info('Evaluating', { count: deliverables.length });
 
     for (const d of deliverables) {
-      if (args.changedFields?.length) {
-        const relevant = d.required.cardIds.some((c) => args.changedFields?.includes(c));
+      if (args.mutated?.length) {
+        const relevant = d.required.cardIds.some((c) => args.mutated?.includes(c));
         if (!relevant) continue;
       }
 
@@ -615,7 +615,7 @@ const _deliverableEvaluate = mutation({
           context: {
             subject: args.subject,
             subjectId: args.subjectId,
-            changedFields: args.changedFields,
+            mutated: args.mutated,
           },
           variables: args.variables,
           status: 'pending',
