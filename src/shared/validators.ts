@@ -98,29 +98,14 @@ export const Source = {
 } as const;
 
 // ============================================================================
-// Subject (Entity types)
+// Subject (Entity types - defined by host application)
 // ============================================================================
 
-const subjectValues = {
-  BENEFICIARY: 'beneficiary',
-  EVENT: 'event',
-  EVENT_INSTANCE: 'eventInstance',
-} as const;
-
-export type Subject = (typeof subjectValues)[keyof typeof subjectValues];
-
-const subjectDisplayNames: Record<Subject, string> = {
-  beneficiary: 'Beneficiary',
-  event: 'Event',
-  eventInstance: 'Event Instance',
-};
-
-export const Subject = {
-  ...subjectValues,
-  valid: (value: string): value is Subject =>
-    Object.values(subjectValues).includes(value as Subject),
-  display: (s: Subject): string => subjectDisplayNames[s],
-} as const;
+/**
+ * Subject type is a generic string - the host application defines their own subjects.
+ * Examples: 'beneficiary', 'event', 'eventInstance', 'user', 'project', etc.
+ */
+export type Subject = string;
 
 // ============================================================================
 // Operation (CRUD operations)
@@ -182,10 +167,9 @@ export const DeliverableStatus = {
 // Composite Types (TypeScript only, no validators)
 // ============================================================================
 
-export type Conditions = {
-  time?: { after: string; before?: string };
-  date?: { daysBeforeEvent?: number; hoursBeforeEvent?: number };
-  dayOfWeek?: number[];
+export type Schedule = {
+  at?: number;
+  cron?: string;
 };
 
 export type Required = {

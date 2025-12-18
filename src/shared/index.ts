@@ -12,8 +12,6 @@ export {
   Security,
   // Procedure data sources
   Source,
-  // Subject entity types
-  Subject,
   // CRUD operations
   Operation,
   // Evaluation status
@@ -23,7 +21,7 @@ export {
 } from './validators.js';
 
 // Composite types
-export type { Conditions, Required } from './validators.js';
+export type { Schedule, Required, Subject } from './validators.js';
 
 // Re-export types from validators
 export type {
@@ -66,4 +64,8 @@ export type {
   ExecutionResult,
   CallbackHandler,
   EvaluateTrigger,
+  // Context aggregation types
+  ParentRelation,
+  SubjectConfig,
+  AggregatedContext,
 } from './types.js';

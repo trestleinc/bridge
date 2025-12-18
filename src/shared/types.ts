@@ -11,7 +11,7 @@ import type {
   Source,
   Subject,
   Operation,
-  Conditions,
+  Schedule,
   Required,
   EvaluationStatus,
   DeliverableStatus,
@@ -24,7 +24,7 @@ export type {
   Source,
   Subject,
   Operation,
-  Conditions,
+  Schedule,
   Required,
   EvaluationStatus,
   DeliverableStatus,
@@ -118,8 +118,8 @@ export interface ProcedureUpdate {
 
 /**
  * A Deliverable defines when automated actions should be triggered.
- * When all required cards are present and conditions are met,
- * the deliverable becomes "ready" and can invoke callbacks.
+ * When all required cards are present, the deliverable becomes "ready"
+ * and can invoke callbacks. Optional scheduling via UTC timestamp or cron.
  */
 export interface Deliverable {
   id: string;
@@ -130,7 +130,7 @@ export interface Deliverable {
   required: Required;
   callbackUrl?: string;
   callbackAction?: string;
-  conditions?: Conditions;
+  schedule?: Schedule;
   status: DeliverableStatus;
   createdAt: number;
   updatedAt: number;
@@ -145,7 +145,7 @@ export interface DeliverableInput {
   required: Required;
   callbackUrl?: string;
   callbackAction?: string;
-  conditions?: Conditions;
+  schedule?: Schedule;
 }
 
 export interface DeliverableUpdate {
@@ -153,7 +153,7 @@ export interface DeliverableUpdate {
   description?: string;
   required?: Required;
   status?: DeliverableStatus;
-  conditions?: Conditions;
+  schedule?: Schedule;
 }
 
 // ============================================================================
@@ -320,4 +320,63 @@ export interface EvaluateTrigger {
   subjectId: string;
   variables?: Record<string, unknown>;
   mutated?: string[];
+}
+
+// ============================================================================
+// Context Aggregation
+// ============================================================================
+
+/**
+ * Configuration for a subject's parent relationships.
+ */
+export interface ParentRelation {
+  /** Field name on the document that contains the parent ID (e.g., 'eventId') */
+  field: string;
+  /** The subject type of the parent (e.g., 'event') */
+  subject: Subject;
+}
+
+/**
+ * Full configuration for a subject binding.
+ * Includes table name and optional parent relationships for aggregation.
+ */
+export interface SubjectConfig {
+  /** Host table name */
+  table: string;
+  /** Parent relationships for context aggregation */
+  parents?: ParentRelation[];
+}
+
+/**
+ * Aggregated context from multiple related subjects.
+ * Used when evaluating deliverables to provide full context from the subject hierarchy.
+ *
+ * @example
+ * ```typescript
+ * const context = await b.aggregate(ctx, {
+ *   subject: 'eventInstance',
+ *   subjectId: 'inst_123',
+ * });
+ * // Returns:
+ * // {
+ * //   subject: 'eventInstance',
+ * //   subjectId: 'inst_123',
+ * //   variables: { firstName: 'John', eventName: 'Workshop', ... },
+ * //   subjects: {
+ * //     beneficiary: { id: 'ben_123', ... },
+ * //     event: { id: 'evt_456', ... },
+ * //     eventInstance: { id: 'inst_123', ... },
+ * //   }
+ * // }
+ * ```
+ */
+export interface AggregatedContext {
+  /** The primary subject type */
+  subject: string;
+  /** The primary subject ID */
+  subjectId: string;
+  /** Merged variables from all subjects (parents first, then current subject) */
+  variables: Record<string, unknown>;
+  /** Raw data for each resolved subject, keyed by subject type */
+  subjects: Record<string, Record<string, unknown>>;
 }

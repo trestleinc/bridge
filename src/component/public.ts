@@ -49,12 +49,9 @@ const procedureCardValidator = v.object({
   writeTo: v.object({ path: v.string() }),
 });
 
-const conditionsValidator = v.object({
-  time: v.optional(v.object({ after: v.string(), before: v.optional(v.string()) })),
-  date: v.optional(
-    v.object({ daysBeforeEvent: v.optional(v.number()), hoursBeforeEvent: v.optional(v.number()) })
-  ),
-  dayOfWeek: v.optional(v.array(v.number())),
+const scheduleValidator = v.object({
+  at: v.optional(v.number()),
+  cron: v.optional(v.string()),
 });
 
 const requiredValidator = v.object({
@@ -494,7 +491,7 @@ const _deliverableCreate = mutation({
     required: requiredValidator,
     callbackUrl: v.optional(v.string()),
     callbackAction: v.optional(v.string()),
-    conditions: v.optional(conditionsValidator),
+    schedule: v.optional(scheduleValidator),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -518,7 +515,7 @@ const _deliverableUpdate = mutation({
     description: v.optional(v.string()),
     required: v.optional(requiredValidator),
     status: v.optional(deliverableStatusValidator),
-    conditions: v.optional(conditionsValidator),
+    schedule: v.optional(scheduleValidator),
   },
   returns: v.any(),
   handler: async (ctx, { id, ...updates }) => {
@@ -607,7 +604,6 @@ const _deliverableEvaluate = mutation({
 
       if (ready) {
         const evalId = crypto.randomUUID();
-        const scheduled = scheduleTime(d.conditions);
         await ctx.db.insert('evaluations', {
           id: evalId,
           deliverableId: d.id,
@@ -619,7 +615,7 @@ const _deliverableEvaluate = mutation({
           },
           variables: args.variables,
           status: 'pending',
-          scheduledFor: scheduled,
+          scheduledFor: d.schedule?.at,
           createdAt: Date.now(),
         });
         logger.info('Evaluation created', { evalId, deliverableId: d.id });
@@ -640,20 +636,6 @@ const _deliverableEvaluate = mutation({
     return results;
   },
 });
-
-function scheduleTime(conditions?: { time?: { after: string }; dayOfWeek?: number[] }): number {
-  if (!conditions?.time?.after) return Date.now();
-  const [h, m] = conditions.time.after.split(':').map(Number);
-  const now = new Date();
-  const scheduled = new Date(now);
-  scheduled.setHours(h, m, 0, 0);
-  if (scheduled.getTime() <= now.getTime()) scheduled.setDate(scheduled.getDate() + 1);
-  if (conditions.dayOfWeek?.length) {
-    while (!conditions.dayOfWeek.includes(scheduled.getDay()))
-      scheduled.setDate(scheduled.getDate() + 1);
-  }
-  return scheduled.getTime();
-}
 
 export const deliverable = {
   get: _deliverableGet,

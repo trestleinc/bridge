@@ -38,11 +38,8 @@ const securityValidator = v.union(
 
 const sourceValidator = v.union(v.literal('form'), v.literal('import'), v.literal('api'));
 
-const subjectValidator = v.union(
-  v.literal('beneficiary'),
-  v.literal('event'),
-  v.literal('eventInstance')
-);
+// Subject is a generic string - host defines their own subject types
+const subjectValidator = v.string();
 
 const operationValidator = v.union(v.literal('create'), v.literal('update'));
 
@@ -54,20 +51,9 @@ const procedureCardValidator = v.object({
   }),
 });
 
-const conditionsValidator = v.object({
-  time: v.optional(
-    v.object({
-      after: v.string(),
-      before: v.optional(v.string()),
-    })
-  ),
-  date: v.optional(
-    v.object({
-      daysBeforeEvent: v.optional(v.number()),
-      hoursBeforeEvent: v.optional(v.number()),
-    })
-  ),
-  dayOfWeek: v.optional(v.array(v.number())),
+const scheduleValidator = v.object({
+  at: v.optional(v.number()),
+  cron: v.optional(v.string()),
 });
 
 const requiredValidator = v.object({
@@ -138,11 +124,11 @@ export default defineSchema({
     .index('by_source', ['organizationId', 'source']),
 
   /**
-   * Deliverables - Reactive triggers with conditions
+   * Deliverables - Reactive triggers with optional scheduling
    *
    * A deliverable defines when automated actions should be triggered.
-   * When all required cards are present and conditions are met,
-   * the deliverable becomes "ready" and can invoke callbacks.
+   * When all required cards are present, the deliverable becomes "ready"
+   * and can invoke callbacks. Optional scheduling via UTC timestamp or cron.
    */
   deliverables: defineTable({
     id: v.string(),
@@ -153,7 +139,7 @@ export default defineSchema({
     required: requiredValidator,
     callbackUrl: v.optional(v.string()),
     callbackAction: v.optional(v.string()),
-    conditions: v.optional(conditionsValidator),
+    schedule: v.optional(scheduleValidator),
     status: deliverableStatusValidator,
     createdAt: v.number(),
     updatedAt: v.number(),
