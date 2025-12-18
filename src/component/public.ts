@@ -41,7 +41,7 @@ const subjectValidator = v.union(
   v.literal('eventInstance')
 );
 
-const operationValidator = v.union(v.literal('create'), v.literal('update'));
+const operationValidator = v.union(v.literal('create'), v.literal('update'), v.literal('delete'));
 
 const procedureCardValidator = v.object({
   cardId: v.string(),
@@ -61,10 +61,25 @@ const requiredValidator = v.object({
 
 const deliverableStatusValidator = v.union(v.literal('active'), v.literal('paused'));
 
+// Operation-specific configuration for deliverables
+const deliverableOperationValidator = v.object({
+  required: requiredValidator,
+  callbackAction: v.optional(v.string()),
+  callbackUrl: v.optional(v.string()),
+});
+
+const operationsValidator = v.object({
+  create: v.optional(deliverableOperationValidator),
+  update: v.optional(deliverableOperationValidator),
+  delete: v.optional(deliverableOperationValidator),
+});
+
 const resultValidator = v.object({
   success: v.boolean(),
   duration: v.optional(v.number()),
   error: v.optional(v.string()),
+  logs: v.optional(v.array(v.string())),
+  artifacts: v.optional(v.array(v.string())),
 });
 
 // ============================================================================
@@ -458,7 +473,7 @@ const _deliverableGet = query({
 const _deliverableList = query({
   args: {
     organizationId: v.string(),
-    subject: v.optional(subjectValidator),
+    subject: v.optional(v.string()),
     status: v.optional(deliverableStatusValidator),
     limit: v.optional(v.number()),
   },
@@ -487,10 +502,8 @@ const _deliverableCreate = mutation({
     organizationId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
-    subject: subjectValidator,
-    required: requiredValidator,
-    callbackUrl: v.optional(v.string()),
-    callbackAction: v.optional(v.string()),
+    subject: v.string(),
+    operations: operationsValidator,
     schedule: v.optional(scheduleValidator),
   },
   returns: v.any(),
@@ -513,7 +526,7 @@ const _deliverableUpdate = mutation({
     id: v.string(),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
-    required: v.optional(requiredValidator),
+    operations: v.optional(operationsValidator),
     status: v.optional(deliverableStatusValidator),
     schedule: v.optional(scheduleValidator),
   },
@@ -540,8 +553,9 @@ const _deliverableUpdate = mutation({
 const _deliverableEvaluate = mutation({
   args: {
     organizationId: v.string(),
-    subject: subjectValidator,
+    subject: v.string(),
     subjectId: v.string(),
+    operation: operationValidator,
     variables: v.any(),
     mutated: v.optional(v.array(v.string())),
   },
@@ -566,24 +580,31 @@ const _deliverableEvaluate = mutation({
       .filter((q) => q.eq(q.field('status'), 'active'))
       .collect();
 
-    logger.info('Evaluating', { count: deliverables.length });
+    logger.info('Evaluating', { count: deliverables.length, operation: args.operation });
 
     for (const d of deliverables) {
+      // Get operation-specific config
+      const opConfig = d.operations[args.operation as keyof typeof d.operations];
+      if (!opConfig) {
+        // This deliverable doesn't have config for this operation
+        continue;
+      }
+
       if (args.mutated?.length) {
-        const relevant = d.required.cardIds.some((c) => args.mutated?.includes(c));
+        const relevant = opConfig.required.cardIds.some((c: string) => args.mutated?.includes(c));
         if (!relevant) continue;
       }
 
       // Check required cards
       const unmetCardIds: string[] = [];
-      for (const cardId of d.required.cardIds) {
+      for (const cardId of opConfig.required.cardIds) {
         const val = args.variables?.[cardId];
         if (val === undefined || val === null || val === '') unmetCardIds.push(cardId);
       }
 
       // Check required deliverables - look for completed evaluations for this subject
       const unmetDeliverableIds: string[] = [];
-      for (const deliverableId of d.required.deliverableIds) {
+      for (const deliverableId of opConfig.required.deliverableIds) {
         const completedEval = await ctx.db
           .query('evaluations')
           .withIndex('by_deliverable', (q) => q.eq('deliverableId', deliverableId))
@@ -608,6 +629,7 @@ const _deliverableEvaluate = mutation({
           id: evalId,
           deliverableId: d.id,
           organizationId: args.organizationId,
+          operation: args.operation,
           context: {
             subject: args.subject,
             subjectId: args.subjectId,
@@ -618,7 +640,7 @@ const _deliverableEvaluate = mutation({
           scheduledFor: d.schedule?.at,
           createdAt: Date.now(),
         });
-        logger.info('Evaluation created', { evalId, deliverableId: d.id });
+        logger.info('Evaluation created', { evalId, deliverableId: d.id, operation: args.operation });
         results.push({
           deliverableId: d.id,
           ready: true,
@@ -684,7 +706,7 @@ const _evaluationStart = mutation({
       .unique();
     if (!e) throw new Error(`Evaluation not found: ${id}`);
     if (e.status !== 'pending') throw new Error(`Evaluation not pending: ${id}`);
-    await ctx.db.patch(e._id, { status: 'running' });
+    await ctx.db.patch(e._id, { status: 'running', started: Date.now() });
     logger.info('Evaluation started', { id });
     return { started: true };
   },

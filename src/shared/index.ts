@@ -42,6 +42,9 @@ export type {
   Procedure,
   ProcedureInput,
   ProcedureUpdate,
+  // Deliverable operation types
+  DeliverableOperation,
+  DeliverableOperations,
   Deliverable,
   DeliverableInput,
   DeliverableUpdate,

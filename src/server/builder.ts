@@ -20,6 +20,7 @@ import type {
   Subject,
   SubjectConfig,
   AggregatedContext,
+  Operation,
 } from '$/shared/types.js';
 
 // ============================================================================
@@ -415,10 +416,11 @@ function bridgeInternal(component: any, config?: Config) {
     /**
      * Execute a callback for a triggered deliverable.
      * Looks up the registered handler and invokes it with the deliverable context.
+     * Uses the operation-specific callbackAction from deliverable.operations[operation].
      *
      * @example
      * ```typescript
-     * const result = await b.execute(deliverable, {
+     * const result = await b.execute(deliverable, 'update', {
      *   subject: 'beneficiary',
      *   subjectId: 'ben_789',
      *   variables: { firstName: 'John' },
@@ -427,9 +429,27 @@ function bridgeInternal(component: any, config?: Config) {
      */
     execute: async (
       deliverable: Deliverable,
+      operation: Operation,
       context: ExecutionContext
     ): Promise<ExecutionResult> => {
-      const callbackType = deliverable.callbackAction?.split(':')[0] || 'default';
+      // Get operation-specific callback
+      const opConfig = deliverable.operations[operation];
+      if (!opConfig) {
+        return {
+          success: false,
+          error: `Deliverable has no config for operation: ${operation}`,
+        };
+      }
+
+      const callbackAction = opConfig.callbackAction;
+      if (!callbackAction) {
+        return {
+          success: false,
+          error: `No callbackAction defined for operation: ${operation}`,
+        };
+      }
+
+      const callbackType = callbackAction.split(':')[0] || 'default';
       const handler = callbacks.get(callbackType);
 
       if (!handler) {

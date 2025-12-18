@@ -117,9 +117,29 @@ export interface ProcedureUpdate {
 // ============================================================================
 
 /**
+ * Operation-specific configuration for a deliverable.
+ * Each operation (create/update/delete) can have its own prerequisites and callback.
+ */
+export interface DeliverableOperation {
+  required: Required;
+  callbackAction?: string;
+  callbackUrl?: string;
+}
+
+/**
+ * Map of operations to their configurations.
+ * At least one operation should be defined.
+ */
+export interface DeliverableOperations {
+  create?: DeliverableOperation;
+  update?: DeliverableOperation;
+  delete?: DeliverableOperation;
+}
+
+/**
  * A Deliverable defines when automated actions should be triggered.
- * When all required cards are present, the deliverable becomes "ready"
- * and can invoke callbacks. Optional scheduling via UTC timestamp or cron.
+ * Operations define per-operation prerequisites and callbacks.
+ * Optional scheduling via UTC timestamp or cron.
  */
 export interface Deliverable {
   id: string;
@@ -127,9 +147,7 @@ export interface Deliverable {
   name: string;
   description?: string;
   subject: Subject;
-  required: Required;
-  callbackUrl?: string;
-  callbackAction?: string;
+  operations: DeliverableOperations;
   schedule?: Schedule;
   status: DeliverableStatus;
   createdAt: number;
@@ -142,16 +160,14 @@ export interface DeliverableInput {
   name: string;
   description?: string;
   subject: Subject;
-  required: Required;
-  callbackUrl?: string;
-  callbackAction?: string;
+  operations: DeliverableOperations;
   schedule?: Schedule;
 }
 
 export interface DeliverableUpdate {
   name?: string;
   description?: string;
-  required?: Required;
+  operations?: DeliverableOperations;
   status?: DeliverableStatus;
   schedule?: Schedule;
 }
@@ -167,10 +183,13 @@ export interface Evaluation {
   id: string;
   deliverableId: string;
   organizationId: string;
+  operation: Operation;
   context: EvaluationContext;
   variables: Record<string, unknown>;
   status: EvaluationStatus;
   scheduledFor?: number;
+  scheduled?: string;
+  started?: number;
   result?: EvaluationResult;
   createdAt: number;
   completedAt?: number;
@@ -192,6 +211,8 @@ export interface EvaluationResult {
   success: boolean;
   duration?: number;
   error?: string;
+  logs?: string[];
+  artifacts?: string[];
 }
 
 // ============================================================================
@@ -318,6 +339,7 @@ export interface EvaluateTrigger {
   organizationId: string;
   subject: Subject;
   subjectId: string;
+  operation: Operation;
   variables?: Record<string, unknown>;
   mutated?: string[];
 }

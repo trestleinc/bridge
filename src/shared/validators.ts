@@ -114,6 +114,7 @@ export type Subject = string;
 const operationValues = {
   CREATE: 'create',
   UPDATE: 'update',
+  DELETE: 'delete',
 } as const;
 
 export type Operation = (typeof operationValues)[keyof typeof operationValues];
@@ -121,6 +122,7 @@ export type Operation = (typeof operationValues)[keyof typeof operationValues];
 const operationDisplayNames: Record<Operation, string> = {
   create: 'Create',
   update: 'Update',
+  delete: 'Delete',
 };
 
 export const Operation = {

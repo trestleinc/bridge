@@ -41,7 +41,7 @@ const sourceValidator = v.union(v.literal('form'), v.literal('import'), v.litera
 // Subject is a generic string - host defines their own subject types
 const subjectValidator = v.string();
 
-const operationValidator = v.union(v.literal('create'), v.literal('update'));
+const operationValidator = v.union(v.literal('create'), v.literal('update'), v.literal('delete'));
 
 const procedureCardValidator = v.object({
   cardId: v.string(),
@@ -59,6 +59,19 @@ const scheduleValidator = v.object({
 const requiredValidator = v.object({
   cardIds: v.array(v.string()),
   deliverableIds: v.array(v.string()),
+});
+
+// Operation-specific configuration for deliverables
+const deliverableOperationValidator = v.object({
+  required: requiredValidator,
+  callbackAction: v.optional(v.string()),
+  callbackUrl: v.optional(v.string()),
+});
+
+const operationsValidator = v.object({
+  create: v.optional(deliverableOperationValidator),
+  update: v.optional(deliverableOperationValidator),
+  delete: v.optional(deliverableOperationValidator),
 });
 
 const evaluationStatusValidator = v.union(
@@ -127,8 +140,8 @@ export default defineSchema({
    * Deliverables - Reactive triggers with optional scheduling
    *
    * A deliverable defines when automated actions should be triggered.
-   * When all required cards are present, the deliverable becomes "ready"
-   * and can invoke callbacks. Optional scheduling via UTC timestamp or cron.
+   * Operations define per-operation prerequisites and callbacks.
+   * Optional scheduling via UTC timestamp or cron.
    */
   deliverables: defineTable({
     id: v.string(),
@@ -136,9 +149,7 @@ export default defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
     subject: subjectValidator,
-    required: requiredValidator,
-    callbackUrl: v.optional(v.string()),
-    callbackAction: v.optional(v.string()),
+    operations: operationsValidator,
     schedule: v.optional(scheduleValidator),
     status: deliverableStatusValidator,
     createdAt: v.number(),
@@ -158,6 +169,7 @@ export default defineSchema({
     id: v.string(),
     deliverableId: v.string(),
     organizationId: v.string(),
+    operation: operationValidator,
     context: v.object({
       subject: v.string(),
       subjectId: v.string(),
@@ -166,11 +178,15 @@ export default defineSchema({
     variables: v.any(),
     status: evaluationStatusValidator,
     scheduledFor: v.optional(v.number()),
+    scheduled: v.optional(v.string()),
+    started: v.optional(v.number()),
     result: v.optional(
       v.object({
         success: v.boolean(),
         duration: v.optional(v.number()),
         error: v.optional(v.string()),
+        logs: v.optional(v.array(v.string())),
+        artifacts: v.optional(v.array(v.string())),
       })
     ),
     createdAt: v.number(),
