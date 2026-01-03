@@ -1,83 +1,107 @@
-/**
- * @trestleinc/bridge - Shared exports
- *
- * Types and utilities that can be used in any environment.
- */
+export {
+  cancelledResultValidator,
+  cardDocValidator,
+  completedResultValidator,
+  createId,
+  deliverableDocValidator,
+  deliverableOperationValidator,
+  DeliverableStatus,
+  deliverableStatusValidator,
+  evaluateResultValidator,
+  evaluationContextValidator,
+  evaluationDocValidator,
+  EvaluationStatus,
+  evaluationStatusValidator,
+  fieldErrorValidator,
+  formatDuration,
+  idResultValidator,
+  Operation,
+  operationsValidator,
+  operationValidator,
+  parseDuration,
+  procedureCardValidator,
+  procedureDocValidator,
+  procedureSubjectValidator,
+  removedResultValidator,
+  requiredValidator,
+  resultValidator,
+  scheduleValidator,
+  Security,
+  securityValidator,
+  Source,
+  sourceValidator,
+  startedResultValidator,
+  submitResultValidator,
+  Variant,
+  variantValidator,
+} from './validators';
 
-// Entity types
 export type {
   AggregatedContext,
   CallbackHandler,
   Card,
+  CardDoc,
+  CardId,
   CardInput,
   CardListOptions,
   Deliverable,
+  DeliverableDoc,
+  DeliverableId,
   DeliverableInput,
   DeliverableListOptions,
-  // Deliverable operation types
   DeliverableOperation,
   DeliverableOperations,
+  DeliverableOperationValue,
   DeliverableResult,
+  DeliverableStatus as DeliverableStatusType,
+  DeliverableStatusValue,
   DeliverableUpdate,
-  EvaluateDeliverablesInput,
+  Duration,
+  EvaluateResult,
   EvaluateTrigger,
   Evaluation,
   EvaluationContext,
+  EvaluationContextValue,
+  EvaluationDoc,
+  EvaluationId,
   EvaluationListOptions,
   EvaluationResult,
-  // Execution types
+  EvaluationStatus as EvaluationStatusType,
+  EvaluationStatusValue,
   ExecutionContext,
   ExecutionResult,
   FieldError,
+  FieldErrorValue,
+  IdResult,
   ListOptions,
-  // Context aggregation types
+  Operation as OperationType,
+  OperationsValue,
+  OperationValue,
+  OrganizationId,
   ParentRelation,
   Procedure,
   ProcedureCard,
+  ProcedureCardValue,
+  ProcedureDoc,
+  ProcedureId,
   ProcedureInput,
   ProcedureListOptions,
+  ProcedureSubjectValue,
   ProcedureUpdate,
+  Required,
+  RequiredValue,
+  ResultValue,
+  Schedule,
+  ScheduleValue,
+  Security as SecurityType,
+  SecurityValue,
+  Source as SourceType,
+  SourceValue,
+  Subject,
   SubjectConfig,
-  // Submission types
   Submission,
   SubmissionResult,
-} from "./types";
-// Composite types
-// Re-export types from validators
-export type {
-  CardId,
-  DeliverableId,
-  DeliverableStatus as DeliverableStatusType,
-  Duration,
-  EvaluationId,
-  EvaluationStatus as EvaluationStatusType,
-  Operation as OperationType,
-  OrganizationId,
-  ProcedureId,
-  Required,
-  Schedule,
-  Security as SecurityType,
-  Source as SourceType,
-  Subject,
-  Subject as SubjectType,
+  SubmitResult,
   Variant as VariantType,
-} from "./validators";
-// Enums with attached methods
-// Utility functions
-export {
-  createId,
-  // Deliverable status
-  DeliverableStatus,
-  // Evaluation status
-  EvaluationStatus,
-  formatDuration,
-  // CRUD operations
-  Operation,
-  parseDuration,
-  // Security levels
-  Security,
-  // Procedure data sources
-  Source,
-  // Card field types
-  Variant,
-} from "./validators";
+  VariantValue,
+} from './validators';

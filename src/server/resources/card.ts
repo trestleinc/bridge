@@ -1,45 +1,13 @@
-import { mutationGeneric, queryGeneric } from "convex/server";
-import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server/bridge";
-import type {
-  AnyMutationCtx,
-  AnyQueryCtx,
-  ResourceOptions,
-} from "$/server/resource";
-import type { Card, OrganizationId } from "$/shared/types";
-
-const variantValidator = v.union(
-  v.literal("STRING"),
-  v.literal("TEXT"),
-  v.literal("NUMBER"),
-  v.literal("BOOLEAN"),
-  v.literal("DATE"),
-  v.literal("EMAIL"),
-  v.literal("URL"),
-  v.literal("PHONE"),
-  v.literal("SSN"),
-  v.literal("ADDRESS"),
-  v.literal("SUBJECT"),
-  v.literal("ARRAY"),
-);
-
-const securityValidator = v.union(
-  v.literal("PUBLIC"),
-  v.literal("CONFIDENTIAL"),
-  v.literal("RESTRICTED"),
-);
-
-const cardValidator = v.object({
-  id: v.string(),
-  organizationId: v.string(),
-  slug: v.string(),
-  label: v.string(),
-  variant: variantValidator,
-  security: securityValidator,
-  subject: v.string(),
-  createdBy: v.string(),
-  createdAt: v.number(),
-});
+import { mutationGeneric, queryGeneric } from 'convex/server';
+import { v } from 'convex/values';
+import type { BridgeComponentApi } from '$/server/bridge';
+import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from '$/server/resource';
+import {
+  cardDocValidator,
+  securityValidator,
+  variantValidator,
+  type Card,
+} from '$/shared/validators';
 
 export function createCardResource(
   component: BridgeComponentApi,
@@ -48,15 +16,15 @@ export function createCardResource(
   const hooks = options?.hooks;
 
   return {
-    __resource: "card" as const,
+    __resource: 'card' as const,
 
     get: queryGeneric({
       args: { id: v.string() },
-      returns: v.union(cardValidator, v.null()),
+      returns: v.union(cardDocValidator, v.null()),
       handler: async (ctx: AnyQueryCtx, { id }) => {
         const doc = await ctx.runQuery(component.public.cardGet, { id });
         if (doc && hooks?.evalRead) {
-          await hooks.evalRead(ctx, doc.organizationId as OrganizationId);
+          await hooks.evalRead(ctx, doc.organizationId);
         }
         return doc;
       },
@@ -64,10 +32,10 @@ export function createCardResource(
 
     find: queryGeneric({
       args: { organizationId: v.string(), slug: v.string() },
-      returns: v.union(cardValidator, v.null()),
+      returns: v.union(cardDocValidator, v.null()),
       handler: async (ctx: AnyQueryCtx, args) => {
         if (hooks?.evalRead) {
-          await hooks.evalRead(ctx, args.organizationId as OrganizationId);
+          await hooks.evalRead(ctx, args.organizationId);
         }
         return ctx.runQuery(component.public.cardFind, args);
       },
@@ -79,10 +47,10 @@ export function createCardResource(
         subject: v.optional(v.string()),
         limit: v.optional(v.number()),
       },
-      returns: v.array(cardValidator),
+      returns: v.array(cardDocValidator),
       handler: async (ctx: AnyQueryCtx, args) => {
         if (hooks?.evalRead) {
-          await hooks.evalRead(ctx, args.organizationId as OrganizationId);
+          await hooks.evalRead(ctx, args.organizationId);
         }
         let docs = await ctx.runQuery(component.public.cardList, args);
         if (hooks?.transform) {
@@ -102,14 +70,14 @@ export function createCardResource(
         subject: v.string(),
         createdBy: v.string(),
       },
-      returns: cardValidator,
+      returns: cardDocValidator,
       handler: async (ctx: AnyMutationCtx, args) => {
         if (hooks?.evalWrite) {
-          await hooks.evalWrite(ctx, args as Partial<Card>);
+          await hooks.evalWrite(ctx, args);
         }
         const result = await ctx.runMutation(component.public.cardCreate, args);
         if (hooks?.onInsert) {
-          await hooks.onInsert(ctx, result as Card);
+          await hooks.onInsert(ctx, result);
         }
         return result;
       },

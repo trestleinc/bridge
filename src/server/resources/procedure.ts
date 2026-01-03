@@ -1,55 +1,17 @@
-import { mutationGeneric, queryGeneric } from "convex/server";
-import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server/bridge";
-import type {
-  AnyMutationCtx,
-  AnyQueryCtx,
-  ResourceOptions,
-} from "$/server/resource";
-import type {
-  OrganizationId,
-  Procedure,
-  SubmissionResult,
-} from "$/shared/types";
-
-const sourceValidator = v.union(
-  v.literal("form"),
-  v.literal("import"),
-  v.literal("api"),
-);
-const operationValidator = v.union(
-  v.literal("create"),
-  v.literal("update"),
-  v.literal("delete"),
-);
-
-const procedureCardValidator = v.object({
-  cardId: v.string(),
-  required: v.boolean(),
-  writeTo: v.object({ path: v.string() }),
-});
-
-const procedureValidator = v.object({
-  id: v.string(),
-  organizationId: v.string(),
-  name: v.string(),
-  description: v.optional(v.string()),
-  source: sourceValidator,
-  subject: v.optional(
-    v.object({ type: v.string(), operation: operationValidator }),
-  ),
-  cards: v.array(procedureCardValidator),
-  createdAt: v.number(),
-  updatedAt: v.number(),
-});
-
-const submissionResultValidator = v.object({
-  success: v.boolean(),
-  errors: v.optional(
-    v.array(v.object({ field: v.string(), message: v.string() })),
-  ),
-  validated: v.array(v.string()),
-});
+import { mutationGeneric, queryGeneric } from 'convex/server';
+import { v } from 'convex/values';
+import type { BridgeComponentApi } from '$/server/bridge';
+import { NotFoundError } from '$/server/errors';
+import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from '$/server/resource';
+import {
+  operationValidator,
+  procedureCardValidator,
+  procedureDocValidator,
+  sourceValidator,
+  submitResultValidator,
+  type Procedure,
+  type SubmissionResult,
+} from '$/shared/validators';
 
 export function createProcedureResource(
   component: BridgeComponentApi,
@@ -58,15 +20,15 @@ export function createProcedureResource(
   const hooks = options?.hooks;
 
   return {
-    __resource: "procedure" as const,
+    __resource: 'procedure' as const,
 
     get: queryGeneric({
       args: { id: v.string() },
-      returns: v.union(procedureValidator, v.null()),
+      returns: v.union(procedureDocValidator, v.null()),
       handler: async (ctx: AnyQueryCtx, { id }) => {
         const doc = await ctx.runQuery(component.public.procedureGet, { id });
         if (doc && hooks?.evalRead) {
-          await hooks.evalRead(ctx, doc.organizationId as OrganizationId);
+          await hooks.evalRead(ctx, doc.organizationId);
         }
         return doc;
       },
@@ -78,10 +40,10 @@ export function createProcedureResource(
         source: v.optional(sourceValidator),
         limit: v.optional(v.number()),
       },
-      returns: v.array(procedureValidator),
+      returns: v.array(procedureDocValidator),
       handler: async (ctx: AnyQueryCtx, args) => {
         if (hooks?.evalRead) {
-          await hooks.evalRead(ctx, args.organizationId as OrganizationId);
+          await hooks.evalRead(ctx, args.organizationId);
         }
         let docs = await ctx.runQuery(component.public.procedureList, args);
         if (hooks?.transform) {
@@ -106,7 +68,7 @@ export function createProcedureResource(
       returns: v.object({ id: v.string() }),
       handler: async (ctx: AnyMutationCtx, args) => {
         if (hooks?.evalWrite) {
-          await hooks.evalWrite(ctx, args as Partial<Procedure>);
+          await hooks.evalWrite(ctx, args as Procedure);
         }
         const result = await ctx.runMutation(
           component.public.procedureCreate,
@@ -116,7 +78,7 @@ export function createProcedureResource(
           const doc = await ctx.runQuery(component.public.procedureGet, {
             id: result.id,
           });
-          if (doc) await hooks.onInsert(ctx, doc as Procedure);
+          if (doc) await hooks.onInsert(ctx, doc);
         }
         return result;
       },
@@ -133,13 +95,10 @@ export function createProcedureResource(
       returns: v.object({ id: v.string() }),
       handler: async (ctx: AnyMutationCtx, { id, ...updates }) => {
         const prev = await ctx.runQuery(component.public.procedureGet, { id });
-        if (!prev) throw new Error(`Procedure not found: ${id}`);
+        if (!prev) throw new NotFoundError('Procedure', id);
 
         if (hooks?.evalWrite) {
-          await hooks.evalWrite(ctx, {
-            ...prev,
-            ...updates,
-          } as Partial<Procedure>);
+          await hooks.evalWrite(ctx, { ...prev, ...updates });
         }
 
         const result = await ctx.runMutation(component.public.procedureUpdate, {
@@ -147,10 +106,9 @@ export function createProcedureResource(
           ...updates,
         });
 
-        if (hooks?.onUpdate && prev) {
+        if (hooks?.onUpdate) {
           const doc = await ctx.runQuery(component.public.procedureGet, { id });
-          if (doc)
-            await hooks.onUpdate(ctx, doc as Procedure, prev as Procedure);
+          if (doc) await hooks.onUpdate(ctx, doc, prev);
         }
         return result;
       },
@@ -160,14 +118,17 @@ export function createProcedureResource(
       args: { id: v.string() },
       returns: v.object({ removed: v.boolean() }),
       handler: async (ctx: AnyMutationCtx, { id }) => {
+        const doc = await ctx.runQuery(component.public.procedureGet, { id });
+        if (!doc) throw new NotFoundError('Procedure', id);
+
         if (hooks?.evalRemove) {
-          await hooks.evalRemove(ctx, id);
+          await hooks.evalRemove(ctx, doc);
         }
         const result = await ctx.runMutation(component.public.procedureRemove, {
           id,
         });
         if (hooks?.onRemove) {
-          await hooks.onRemove(ctx, id);
+          await hooks.onRemove(ctx, doc);
         }
         return result;
       },
@@ -179,14 +140,15 @@ export function createProcedureResource(
         organizationId: v.string(),
         subject: v.string(),
         subjectId: v.string(),
-        values: v.any(),
+        values: v.record(v.string(), v.any()),
       },
-      returns: submissionResultValidator,
+      returns: submitResultValidator,
       handler: async (ctx: AnyMutationCtx, args) => {
         if (hooks?.evalWrite) {
-          await hooks.evalWrite(ctx, {
-            organizationId: args.organizationId,
-          } as Partial<Procedure>);
+          const proc = await ctx.runQuery(component.public.procedureGet, {
+            id: args.procedureId,
+          });
+          if (proc) await hooks.evalWrite(ctx, proc);
         }
         return ctx.runMutation(
           component.public.procedureSubmit,

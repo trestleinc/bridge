@@ -1,55 +1,13 @@
-import { mutationGeneric, queryGeneric } from "convex/server";
-import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server/bridge";
-import type {
-  AnyMutationCtx,
-  AnyQueryCtx,
-  EvaluationOptions,
-} from "$/server/resource";
-import type { Evaluation, OrganizationId } from "$/shared/types";
-
-const evaluationStatusValidator = v.union(
-  v.literal("pending"),
-  v.literal("running"),
-  v.literal("completed"),
-  v.literal("failed"),
-);
-
-const operationValidator = v.union(
-  v.literal("create"),
-  v.literal("update"),
-  v.literal("delete"),
-);
-
-const evaluationContextValidator = v.object({
-  subject: v.string(),
-  subjectId: v.string(),
-  mutated: v.optional(v.array(v.string())),
-});
-
-const evaluationResultValidator = v.object({
-  success: v.boolean(),
-  duration: v.optional(v.number()),
-  error: v.optional(v.string()),
-  logs: v.optional(v.array(v.string())),
-  artifacts: v.optional(v.array(v.string())),
-});
-
-const evaluationValidator = v.object({
-  id: v.string(),
-  deliverableId: v.string(),
-  organizationId: v.string(),
-  operation: operationValidator,
-  context: evaluationContextValidator,
-  variables: v.any(),
-  status: evaluationStatusValidator,
-  scheduledFor: v.optional(v.number()),
-  scheduled: v.optional(v.string()),
-  started: v.optional(v.number()),
-  result: v.optional(evaluationResultValidator),
-  createdAt: v.number(),
-  completedAt: v.optional(v.number()),
-});
+import { mutationGeneric, queryGeneric } from 'convex/server';
+import { v } from 'convex/values';
+import type { BridgeComponentApi } from '$/server/bridge';
+import { NotFoundError } from '$/server/errors';
+import type { AnyMutationCtx, AnyQueryCtx, EvaluationOptions } from '$/server/resource';
+import {
+  evaluationDocValidator,
+  resultValidator,
+  type Evaluation,
+} from '$/shared/validators';
 
 export function createEvaluationResource(
   component: BridgeComponentApi,
@@ -58,15 +16,15 @@ export function createEvaluationResource(
   const hooks = options?.hooks;
 
   return {
-    __resource: "evaluation" as const,
+    __resource: 'evaluation' as const,
 
     get: queryGeneric({
       args: { id: v.string() },
-      returns: v.union(evaluationValidator, v.null()),
+      returns: v.union(evaluationDocValidator, v.null()),
       handler: async (ctx: AnyQueryCtx, { id }) => {
         const doc = await ctx.runQuery(component.public.evaluationGet, { id });
         if (doc && hooks?.evalRead) {
-          await hooks.evalRead(ctx, doc.organizationId as OrganizationId);
+          await hooks.evalRead(ctx, doc.organizationId);
         }
         return doc;
       },
@@ -77,10 +35,10 @@ export function createEvaluationResource(
         organizationId: v.string(),
         limit: v.optional(v.number()),
       },
-      returns: v.array(evaluationValidator),
+      returns: v.array(evaluationDocValidator),
       handler: async (ctx: AnyQueryCtx, args) => {
         if (hooks?.evalRead) {
-          await hooks.evalRead(ctx, args.organizationId as OrganizationId);
+          await hooks.evalRead(ctx, args.organizationId);
         }
         let docs = await ctx.runQuery(component.public.evaluationList, args);
         if (hooks?.transform) {
@@ -95,8 +53,9 @@ export function createEvaluationResource(
       returns: v.object({ started: v.boolean() }),
       handler: async (ctx: AnyMutationCtx, { id }) => {
         const doc = await ctx.runQuery(component.public.evaluationGet, { id });
-        if (hooks?.evalWrite && doc) {
-          await hooks.evalWrite(ctx, doc as Partial<Evaluation>);
+        if (!doc) throw new NotFoundError('Evaluation', id);
+        if (hooks?.evalWrite) {
+          await hooks.evalWrite(ctx, doc);
         }
         return ctx.runMutation(component.public.evaluationStart, { id });
       },
@@ -107,8 +66,9 @@ export function createEvaluationResource(
       returns: v.object({ cancelled: v.boolean() }),
       handler: async (ctx: AnyMutationCtx, { id }) => {
         const doc = await ctx.runQuery(component.public.evaluationGet, { id });
-        if (hooks?.evalWrite && doc) {
-          await hooks.evalWrite(ctx, doc as Partial<Evaluation>);
+        if (!doc) throw new NotFoundError('Evaluation', id);
+        if (hooks?.evalWrite) {
+          await hooks.evalWrite(ctx, doc);
         }
         return ctx.runMutation(component.public.evaluationCancel, { id });
       },
@@ -117,16 +77,17 @@ export function createEvaluationResource(
     complete: mutationGeneric({
       args: {
         id: v.string(),
-        result: evaluationResultValidator,
+        result: resultValidator,
       },
       returns: v.object({ completed: v.boolean() }),
       handler: async (ctx: AnyMutationCtx, args) => {
         const prev = await ctx.runQuery(component.public.evaluationGet, {
           id: args.id,
         });
+        if (!prev) throw new NotFoundError('Evaluation', args.id);
 
-        if (hooks?.evalWrite && prev) {
-          await hooks.evalWrite(ctx, prev as Partial<Evaluation>);
+        if (hooks?.evalWrite) {
+          await hooks.evalWrite(ctx, prev);
         }
 
         const result = await ctx.runMutation(
@@ -134,11 +95,11 @@ export function createEvaluationResource(
           args,
         );
 
-        if (hooks?.onComplete && prev) {
+        if (hooks?.onComplete) {
           const doc = await ctx.runQuery(component.public.evaluationGet, {
             id: args.id,
           });
-          if (doc) await hooks.onComplete(ctx, doc as Evaluation);
+          if (doc) await hooks.onComplete(ctx, doc);
         }
 
         return result;

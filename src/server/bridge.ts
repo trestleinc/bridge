@@ -3,14 +3,14 @@ import type {
   GenericDataModel,
   GenericMutationCtx,
   GenericQueryCtx,
-} from "convex/server";
-import type { EvaluationOptions, ResourceOptions } from "$/server/resource";
+} from 'convex/server';
+import type { EvaluationOptions, ResourceOptions } from '$/server/resource';
 import {
   createCardResource,
   createDeliverableResource,
   createEvaluationResource,
   createProcedureResource,
-} from "$/server/resources";
+} from '$/server/resources';
 import type {
   AggregatedContext,
   CallbackHandler,
@@ -27,64 +27,79 @@ import type {
   SubjectConfig,
   Submission,
   SubmissionResult,
-} from "$/shared/types";
+} from '$/shared/validators';
 
-// ============================================================================
-// Component API Type
-// ============================================================================
-
-/**
- * The shape of a Bridge component's public API.
- * This matches the generated ComponentApi type from src/component/_generated/component.ts
- *
- * Using this type provides better type safety than `any` while still allowing
- * flexibility for the generated component structure.
- */
-export interface BridgeComponentApi {
+export type BridgeComponentApi = {
   public: {
-    cardGet: FunctionReference<"query", "internal">;
-    cardFind: FunctionReference<"query", "internal">;
-    cardList: FunctionReference<"query", "internal">;
-    cardCreate: FunctionReference<"mutation", "internal">;
-    procedureGet: FunctionReference<"query", "internal">;
-    procedureList: FunctionReference<"query", "internal">;
-    procedureCreate: FunctionReference<"mutation", "internal">;
-    procedureUpdate: FunctionReference<"mutation", "internal">;
-    procedureRemove: FunctionReference<"mutation", "internal">;
-    procedureSubmit: FunctionReference<"mutation", "internal">;
-    deliverableGet: FunctionReference<"query", "internal">;
-    deliverableList: FunctionReference<"query", "internal">;
-    deliverableCreate: FunctionReference<"mutation", "internal">;
-    deliverableUpdate: FunctionReference<"mutation", "internal">;
-    deliverableEvaluate: FunctionReference<"mutation", "internal">;
-    evaluationGet: FunctionReference<"query", "internal">;
-    evaluationList: FunctionReference<"query", "internal">;
-    evaluationStart: FunctionReference<"mutation", "internal">;
-    evaluationCancel: FunctionReference<"mutation", "internal">;
-    evaluationComplete: FunctionReference<"mutation", "internal">;
+    cardGet: FunctionReference<'query', 'internal'>;
+    cardFind: FunctionReference<'query', 'internal'>;
+    cardList: FunctionReference<'query', 'internal'>;
+    cardCreate: FunctionReference<'mutation', 'internal'>;
+    procedureGet: FunctionReference<'query', 'internal'>;
+    procedureList: FunctionReference<'query', 'internal'>;
+    procedureCreate: FunctionReference<'mutation', 'internal'>;
+    procedureUpdate: FunctionReference<'mutation', 'internal'>;
+    procedureRemove: FunctionReference<'mutation', 'internal'>;
+    procedureSubmit: FunctionReference<'mutation', 'internal'>;
+    deliverableGet: FunctionReference<'query', 'internal'>;
+    deliverableList: FunctionReference<'query', 'internal'>;
+    deliverableCreate: FunctionReference<'mutation', 'internal'>;
+    deliverableUpdate: FunctionReference<'mutation', 'internal'>;
+    deliverableEvaluate: FunctionReference<'mutation', 'internal'>;
+    evaluationGet: FunctionReference<'query', 'internal'>;
+    evaluationList: FunctionReference<'query', 'internal'>;
+    evaluationStart: FunctionReference<'mutation', 'internal'>;
+    evaluationCancel: FunctionReference<'mutation', 'internal'>;
+    evaluationComplete: FunctionReference<'mutation', 'internal'>;
   };
-}
+};
 
-export interface BridgeOptions<S extends string = string> {
+export type BridgeOptions<S extends string = string> = {
   subjects?: Partial<Record<S, string | SubjectConfig>>;
   cards?: ResourceOptions<Card>;
   procedures?: ResourceOptions<Procedure>;
   deliverables?: ResourceOptions<Deliverable>;
   evaluations?: EvaluationOptions<Evaluation>;
-}
+};
 
 function getTableName(
   subjectConfig: string | SubjectConfig | undefined,
 ): string | undefined {
   if (!subjectConfig) return undefined;
-  return typeof subjectConfig === "string"
-    ? subjectConfig
-    : subjectConfig.table;
+  return typeof subjectConfig === 'string' ? subjectConfig : subjectConfig.table;
 }
 
 function getParents(subjectConfig: string | SubjectConfig | undefined) {
-  if (!subjectConfig || typeof subjectConfig === "string") return [];
+  if (!subjectConfig || typeof subjectConfig === 'string') return [];
   return subjectConfig.parents ?? [];
+}
+
+type SubjectDocument = {
+  id: string;
+  attributes?: Array<{ slug: string; value: unknown }>;
+  [key: string]: unknown;
+};
+
+type DynamicTableQuery = {
+  query(table: string): {
+    withIndex(
+      name: string,
+      fn: (q: { eq(field: string, value: string): unknown }) => unknown,
+    ): {
+      unique(): Promise<SubjectDocument | null>;
+    };
+  };
+};
+
+function querySubjectTable(
+  db: GenericQueryCtx<GenericDataModel>['db'],
+  tableName: string,
+  subjectId: string,
+): Promise<SubjectDocument | null> {
+  return (db as unknown as DynamicTableQuery)
+    .query(tableName)
+    .withIndex('by_uuid', (q) => q.eq('id', subjectId))
+    .unique();
 }
 
 export function bridge(component: BridgeComponentApi) {
@@ -109,32 +124,26 @@ export function bridge(component: BridgeComponentApi) {
       ctx: GenericQueryCtx<GenericDataModel>,
       subject: Subject,
       subjectId: string,
-    ): Promise<Record<string, unknown> | null> {
+    ): Promise<SubjectDocument | null> {
       const subjectConfig = subjects?.[subject as S];
       const tableName = getTableName(subjectConfig);
       if (!tableName) return null;
-
-      const doc = await (ctx.db as any)
-        .query(tableName)
-        .withIndex("by_uuid", (q: any) => q.eq("id", subjectId))
-        .unique();
-
-      return doc ?? null;
+      return querySubjectTable(ctx.db, tableName, subjectId);
     }
 
     function extractVariables(
-      doc: Record<string, unknown>,
+      doc: SubjectDocument,
     ): Record<string, unknown> {
       const variables: Record<string, unknown> = {};
       if (Array.isArray(doc.attributes)) {
         for (const attr of doc.attributes) {
           if (
-            attr
-            && typeof attr === "object"
-            && "slug" in attr
-            && "value" in attr
+            attr &&
+            typeof attr === 'object' &&
+            'slug' in attr &&
+            'value' in attr
           ) {
-            variables[attr.slug as string] = attr.value;
+            variables[attr.slug] = attr.value;
           }
         }
       }
@@ -286,7 +295,7 @@ export function bridge(component: BridgeComponentApi) {
           };
         }
 
-        const callbackType = callbackAction.split(":")[0] || "default";
+        const callbackType = callbackAction.split(':')[0] || 'default';
         const handler = callbacks.get(callbackType);
 
         if (!handler) {
@@ -298,11 +307,10 @@ export function bridge(component: BridgeComponentApi) {
 
         try {
           return await handler(deliverable, context);
-        }
-        catch (error) {
+        } catch (error) {
           return {
             success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
+            error: error instanceof Error ? error.message : 'Unknown error',
           };
         }
       },

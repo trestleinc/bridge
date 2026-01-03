@@ -1,121 +1,51 @@
-/**
- * @trestleinc/bridge - Component Public API
- *
- * Namespaced queries and mutations for Cards, Procedures, Deliverables, and Evaluations.
- */
-
-import { v } from "convex/values";
-import { mutation, query } from "$/component/_generated/server";
-import { getLogger } from "$/component/logger";
-
-// ============================================================================
-// Validators
-// ============================================================================
-
-const variantValidator = v.union(
-  v.literal("STRING"),
-  v.literal("TEXT"),
-  v.literal("NUMBER"),
-  v.literal("BOOLEAN"),
-  v.literal("DATE"),
-  v.literal("EMAIL"),
-  v.literal("URL"),
-  v.literal("PHONE"),
-  v.literal("SSN"),
-  v.literal("ADDRESS"),
-  v.literal("SUBJECT"),
-  v.literal("ARRAY"),
-);
-
-const securityValidator = v.union(
-  v.literal("PUBLIC"),
-  v.literal("CONFIDENTIAL"),
-  v.literal("RESTRICTED"),
-);
-
-const sourceValidator = v.union(
-  v.literal("form"),
-  v.literal("import"),
-  v.literal("api"),
-);
-
-const subjectValidator = v.union(
-  v.literal("beneficiary"),
-  v.literal("event"),
-  v.literal("eventInstance"),
-);
-
-const operationValidator = v.union(
-  v.literal("create"),
-  v.literal("update"),
-  v.literal("delete"),
-);
-
-const procedureCardValidator = v.object({
-  cardId: v.string(),
-  required: v.boolean(),
-  writeTo: v.object({ path: v.string() }),
-});
-
-const scheduleValidator = v.object({
-  at: v.optional(v.number()),
-  cron: v.optional(v.string()),
-});
-
-const requiredValidator = v.object({
-  cardIds: v.array(v.string()),
-  deliverableIds: v.array(v.string()),
-});
-
-const deliverableStatusValidator = v.union(
-  v.literal("active"),
-  v.literal("paused"),
-);
-
-// Operation-specific configuration for deliverables
-const deliverableOperationValidator = v.object({
-  required: requiredValidator,
-  callbackAction: v.optional(v.string()),
-  callbackUrl: v.optional(v.string()),
-});
-
-const operationsValidator = v.object({
-  create: v.optional(deliverableOperationValidator),
-  update: v.optional(deliverableOperationValidator),
-  delete: v.optional(deliverableOperationValidator),
-});
-
-const resultValidator = v.object({
-  success: v.boolean(),
-  duration: v.optional(v.number()),
-  error: v.optional(v.string()),
-  logs: v.optional(v.array(v.string())),
-  artifacts: v.optional(v.array(v.string())),
-});
-
-// ============================================================================
-// CARD
-// ============================================================================
+import { v } from 'convex/values';
+import { nullable } from 'convex-helpers/validators';
+import { mutation, query } from '$/component/_generated/server';
+import { getLogger } from '$/component/logger';
+import {
+  cancelledResultValidator,
+  cardDocValidator,
+  completedResultValidator,
+  deliverableDocValidator,
+  deliverableStatusValidator,
+  evaluateResultValidator,
+  evaluationDocValidator,
+  idResultValidator,
+  operationValidator,
+  operationsValidator,
+  procedureCardValidator,
+  procedureDocValidator,
+  procedureSubjectValidator,
+  removedResultValidator,
+  resultValidator,
+  scheduleValidator,
+  securityValidator,
+  sourceValidator,
+  startedResultValidator,
+  submitResultValidator,
+  variantValidator,
+  type VariantValue,
+} from '$/shared/validators';
 
 const _cardGet = query({
   args: { id: v.string() },
-  returns: v.any(),
+  returns: nullable(cardDocValidator),
   handler: async (ctx, { id }) => {
     return ctx.db
-      .query("cards")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('cards')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
   },
 });
 
 const _cardFind = query({
   args: { organizationId: v.string(), slug: v.string() },
-  returns: v.any(),
+  returns: nullable(cardDocValidator),
   handler: async (ctx, { organizationId, slug }) => {
     return ctx.db
-      .query("cards")
-      .withIndex("by_slug", q =>
-        q.eq("organizationId", organizationId).eq("slug", slug),
+      .query('cards')
+      .withIndex('by_slug', q =>
+        q.eq('organizationId', organizationId).eq('slug', slug),
       )
       .first();
   },
@@ -124,24 +54,22 @@ const _cardFind = query({
 const _cardList = query({
   args: {
     organizationId: v.string(),
-    subject: v.optional(subjectValidator),
+    subject: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(cardDocValidator),
   handler: async (ctx, { organizationId, subject, limit = 100 }) => {
     if (subject) {
       return ctx.db
-        .query("cards")
-        .withIndex("by_subject", q =>
-          q.eq("organizationId", organizationId).eq("subject", subject),
+        .query('cards')
+        .withIndex('by_subject', q =>
+          q.eq('organizationId', organizationId).eq('subject', subject),
         )
         .take(limit);
     }
     return ctx.db
-      .query("cards")
-      .withIndex("by_organization", q =>
-        q.eq("organizationId", organizationId),
-      )
+      .query('cards')
+      .withIndex('by_organization', q => q.eq('organizationId', organizationId))
       .take(limit);
   },
 });
@@ -153,17 +81,17 @@ const _cardCreate = mutation({
     label: v.string(),
     variant: variantValidator,
     security: securityValidator,
-    subject: subjectValidator,
+    subject: v.string(),
     createdBy: v.string(),
   },
-  returns: v.any(),
+  returns: cardDocValidator,
   handler: async (ctx, args) => {
-    const logger = getLogger(["card"]);
+    const logger = getLogger(['card']);
 
     const existing = await ctx.db
-      .query("cards")
-      .withIndex("by_slug", q =>
-        q.eq("organizationId", args.organizationId).eq("slug", args.slug),
+      .query('cards')
+      .withIndex('by_slug', q =>
+        q.eq('organizationId', args.organizationId).eq('slug', args.slug),
       )
       .first();
 
@@ -173,35 +101,32 @@ const _cardCreate = mutation({
           `Card "${args.slug}" exists with variant "${existing.variant}", cannot change to "${args.variant}"`,
         );
       }
-      logger.info("Card exists, returning", { slug: args.slug });
+      logger.info('Card exists, returning', { slug: args.slug });
       return existing;
     }
 
     const id = crypto.randomUUID();
     const card = { id, ...args, createdAt: Date.now() };
-    await ctx.db.insert("cards", card);
-    logger.info("Card created", { id, slug: args.slug });
-    return card;
+    const _id = await ctx.db.insert('cards', card);
+    const created = await ctx.db.get(_id);
+    if (!created) throw new Error('Failed to create card');
+    logger.info('Card created', { id, slug: args.slug });
+    return created;
   },
 });
 
-// Flat exports for Convex component API compatibility
 export const cardGet = _cardGet;
 export const cardFind = _cardFind;
 export const cardList = _cardList;
 export const cardCreate = _cardCreate;
 
-// ============================================================================
-// PROCEDURE
-// ============================================================================
-
 const _procedureGet = query({
   args: { id: v.string() },
-  returns: v.any(),
+  returns: nullable(procedureDocValidator),
   handler: async (ctx, { id }) => {
     return ctx.db
-      .query("procedures")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('procedures')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
   },
 });
@@ -212,23 +137,21 @@ const _procedureList = query({
     source: v.optional(sourceValidator),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(procedureDocValidator),
   handler: async (ctx, { organizationId, source, limit = 50 }) => {
     if (source) {
       return ctx.db
-        .query("procedures")
-        .withIndex("by_source", q =>
-          q.eq("organizationId", organizationId).eq("source", source),
+        .query('procedures')
+        .withIndex('by_source', q =>
+          q.eq('organizationId', organizationId).eq('source', source),
         )
-        .order("desc")
+        .order('desc')
         .take(limit);
     }
     return ctx.db
-      .query("procedures")
-      .withIndex("by_organization", q =>
-        q.eq("organizationId", organizationId),
-      )
-      .order("desc")
+      .query('procedures')
+      .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+      .order('desc')
       .take(limit);
   },
 });
@@ -240,21 +163,18 @@ const _procedureCreate = mutation({
     name: v.string(),
     description: v.optional(v.string()),
     source: sourceValidator,
-    subject: v.optional(
-      v.object({ type: subjectValidator, operation: operationValidator }),
-    ),
+    subject: v.optional(procedureSubjectValidator),
     cards: v.array(procedureCardValidator),
   },
-  returns: v.any(),
+  returns: idResultValidator,
   handler: async (ctx, args) => {
-    const logger = getLogger(["procedure"]);
+    const logger = getLogger(['procedure']);
     const now = Date.now();
 
-    // Validate that all referenced cards exist
     for (const c of args.cards) {
       const card = await ctx.db
-        .query("cards")
-        .withIndex("by_uuid", q => q.eq("id", c.cardId))
+        .query('cards')
+        .withIndex('by_uuid', q => q.eq('id', c.cardId))
         .unique();
 
       if (!card) {
@@ -262,12 +182,12 @@ const _procedureCreate = mutation({
       }
     }
 
-    await ctx.db.insert("procedures", {
+    await ctx.db.insert('procedures', {
       ...args,
       createdAt: now,
       updatedAt: now,
     });
-    logger.info("Procedure created", { id: args.id, name: args.name });
+    logger.info('Procedure created', { id: args.id, name: args.name });
     return { id: args.id };
   },
 });
@@ -280,68 +200,58 @@ const _procedureUpdate = mutation({
     source: v.optional(sourceValidator),
     cards: v.optional(v.array(procedureCardValidator)),
   },
-  returns: v.any(),
+  returns: idResultValidator,
   handler: async (ctx, { id, ...updates }) => {
-    const logger = getLogger(["procedure"]);
+    const logger = getLogger(['procedure']);
     const existing = await ctx.db
-      .query("procedures")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('procedures')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
     if (!existing) throw new Error(`Procedure not found: ${id}`);
 
     const clean: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(updates)) {
-      if (v !== undefined) clean[k] = v;
+    for (const [k, val] of Object.entries(updates)) {
+      if (val !== undefined) clean[k] = val;
     }
 
     await ctx.db.patch(existing._id, { ...clean, updatedAt: Date.now() });
-    logger.info("Procedure updated", { id });
+    logger.info('Procedure updated', { id });
     return { id };
   },
 });
 
 const _procedureRemove = mutation({
   args: { id: v.string() },
-  returns: v.any(),
+  returns: removedResultValidator,
   handler: async (ctx, { id }) => {
-    const logger = getLogger(["procedure"]);
+    const logger = getLogger(['procedure']);
     const proc = await ctx.db
-      .query("procedures")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('procedures')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
     if (proc) {
       await ctx.db.delete(proc._id);
-      logger.info("Procedure removed", { id });
+      logger.info('Procedure removed', { id });
     }
     return { removed: true };
   },
-});
-
-const fieldErrorValidator = v.object({
-  field: v.string(),
-  message: v.string(),
 });
 
 const _procedureSubmit = mutation({
   args: {
     procedureId: v.string(),
     organizationId: v.string(),
-    subject: subjectValidator,
+    subject: v.string(),
     subjectId: v.string(),
-    values: v.any(),
+    values: v.record(v.string(), v.any()),
   },
-  returns: v.object({
-    success: v.boolean(),
-    errors: v.optional(v.array(fieldErrorValidator)),
-    validated: v.array(v.string()),
-  }),
+  returns: submitResultValidator,
   handler: async (ctx, args) => {
-    const logger = getLogger(["procedure", "submit"]);
+    const logger = getLogger(['procedure', 'submit']);
 
-    // Get the procedure
     const proc = await ctx.db
-      .query("procedures")
-      .withIndex("by_uuid", q => q.eq("id", args.procedureId))
+      .query('procedures')
+      .withIndex('by_uuid', q => q.eq('id', args.procedureId))
       .unique();
 
     if (!proc) {
@@ -349,7 +259,7 @@ const _procedureSubmit = mutation({
         success: false,
         errors: [
           {
-            field: "procedureId",
+            field: 'procedureId',
             message: `Procedure not found: ${args.procedureId}`,
           },
         ],
@@ -357,15 +267,13 @@ const _procedureSubmit = mutation({
       };
     }
 
-    // Validate card values against procedure schema
     const errors: { field: string; message: string }[] = [];
     const validated: string[] = [];
 
     for (const ref of proc.cards) {
-      // Look up the card definition
       const card = await ctx.db
-        .query("cards")
-        .withIndex("by_uuid", q => q.eq("id", ref.cardId))
+        .query('cards')
+        .withIndex('by_uuid', q => q.eq('id', ref.cardId))
         .unique();
 
       if (!card) {
@@ -378,21 +286,18 @@ const _procedureSubmit = mutation({
 
       const value = args.values?.[card.slug];
 
-      // Check required fields
       if (
-        ref.required
-        && (value === undefined || value === null || value === "")
+        ref.required &&
+        (value === undefined || value === null || value === '')
       ) {
         errors.push({ field: card.slug, message: `Required field is missing` });
         continue;
       }
 
-      // Skip validation for optional empty fields
-      if (value === undefined || value === null || value === "") {
+      if (value === undefined || value === null || value === '') {
         continue;
       }
 
-      // Variant validation
       const variantError = validateVariant(card.variant, value);
       if (variantError) {
         errors.push({ field: card.slug, message: variantError });
@@ -403,14 +308,14 @@ const _procedureSubmit = mutation({
     }
 
     if (errors.length > 0) {
-      logger.warn("Validation failed", {
+      logger.warn('Validation failed', {
         procedureId: args.procedureId,
         errors,
       });
       return { success: false, errors, validated };
     }
 
-    logger.info("Submission validated", {
+    logger.info('Submission validated', {
       procedureId: args.procedureId,
       subjectId: args.subjectId,
       validated,
@@ -420,70 +325,51 @@ const _procedureSubmit = mutation({
   },
 });
 
-/**
- * Validate a value against a card variant.
- */
-function validateVariant(
-  variant:
-    | "STRING"
-    | "TEXT"
-    | "NUMBER"
-    | "BOOLEAN"
-    | "DATE"
-    | "EMAIL"
-    | "URL"
-    | "PHONE"
-    | "SSN"
-    | "ADDRESS"
-    | "SUBJECT"
-    | "ARRAY",
-  value: unknown,
-): string | null {
+function validateVariant(variant: VariantValue, value: unknown): string | null {
   switch (variant) {
-    case "STRING":
-    case "TEXT":
-      if (typeof value !== "string")
+    case 'STRING':
+    case 'TEXT':
+      if (typeof value !== 'string')
         return `Expected string, got ${typeof value}`;
       break;
-    case "NUMBER":
-      if (typeof value !== "number")
+    case 'NUMBER':
+      if (typeof value !== 'number')
         return `Expected number, got ${typeof value}`;
       break;
-    case "BOOLEAN":
-      if (typeof value !== "boolean")
+    case 'BOOLEAN':
+      if (typeof value !== 'boolean')
         return `Expected boolean, got ${typeof value}`;
       break;
-    case "DATE":
-      if (typeof value !== "string" && typeof value !== "number")
+    case 'DATE':
+      if (typeof value !== 'string' && typeof value !== 'number')
         return `Expected date string or timestamp, got ${typeof value}`;
       break;
-    case "EMAIL":
-      if (typeof value !== "string" || !value.includes("@"))
+    case 'EMAIL':
+      if (typeof value !== 'string' || !value.includes('@'))
         return `Expected valid email address`;
       break;
-    case "URL":
-      if (typeof value !== "string") return `Expected URL string`;
+    case 'URL':
+      if (typeof value !== 'string') return `Expected URL string`;
       try {
         new URL(value);
-      }
-      catch {
+      } catch {
         return `Invalid URL format`;
       }
       break;
-    case "PHONE":
-      if (typeof value !== "string") return `Expected phone string`;
+    case 'PHONE':
+      if (typeof value !== 'string') return `Expected phone string`;
       break;
-    case "SSN":
-      if (typeof value !== "string") return `Expected SSN string`;
+    case 'SSN':
+      if (typeof value !== 'string') return `Expected SSN string`;
       break;
-    case "ADDRESS":
-      if (typeof value !== "object" || value === null)
+    case 'ADDRESS':
+      if (typeof value !== 'object' || value === null)
         return `Expected address object`;
       break;
-    case "SUBJECT":
-      if (typeof value !== "string") return `Expected subject ID string`;
+    case 'SUBJECT':
+      if (typeof value !== 'string') return `Expected subject ID string`;
       break;
-    case "ARRAY":
+    case 'ARRAY':
       if (!Array.isArray(value)) return `Expected array, got ${typeof value}`;
       break;
   }
@@ -497,17 +383,13 @@ export const procedureUpdate = _procedureUpdate;
 export const procedureRemove = _procedureRemove;
 export const procedureSubmit = _procedureSubmit;
 
-// ============================================================================
-// DELIVERABLE
-// ============================================================================
-
 const _deliverableGet = query({
   args: { id: v.string() },
-  returns: v.any(),
+  returns: nullable(deliverableDocValidator),
   handler: async (ctx, { id }) => {
     return ctx.db
-      .query("deliverables")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('deliverables')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
   },
 });
@@ -519,22 +401,22 @@ const _deliverableList = query({
     status: v.optional(deliverableStatusValidator),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(deliverableDocValidator),
   handler: async (ctx, { organizationId, subject, status, limit = 50 }) => {
     const results = subject
       ? await ctx.db
-          .query("deliverables")
-          .withIndex("by_subject", q =>
-            q.eq("organizationId", organizationId).eq("subject", subject),
+          .query('deliverables')
+          .withIndex('by_subject', q =>
+            q.eq('organizationId', organizationId).eq('subject', subject),
           )
-          .order("desc")
+          .order('desc')
           .take(limit)
       : await ctx.db
-          .query("deliverables")
-          .withIndex("by_organization", q =>
-            q.eq("organizationId", organizationId),
+          .query('deliverables')
+          .withIndex('by_organization', q =>
+            q.eq('organizationId', organizationId),
           )
-          .order("desc")
+          .order('desc')
           .take(limit);
     return status ? results.filter(d => d.status === status) : results;
   },
@@ -550,17 +432,17 @@ const _deliverableCreate = mutation({
     operations: operationsValidator,
     schedule: v.optional(scheduleValidator),
   },
-  returns: v.any(),
+  returns: idResultValidator,
   handler: async (ctx, args) => {
-    const logger = getLogger(["deliverable"]);
+    const logger = getLogger(['deliverable']);
     const now = Date.now();
-    await ctx.db.insert("deliverables", {
+    await ctx.db.insert('deliverables', {
       ...args,
-      status: "active" as const,
+      status: 'active' as const,
       createdAt: now,
       updatedAt: now,
     });
-    logger.info("Deliverable created", { id: args.id, name: args.name });
+    logger.info('Deliverable created', { id: args.id, name: args.name });
     return { id: args.id };
   },
 });
@@ -574,22 +456,22 @@ const _deliverableUpdate = mutation({
     status: v.optional(deliverableStatusValidator),
     schedule: v.optional(scheduleValidator),
   },
-  returns: v.any(),
+  returns: idResultValidator,
   handler: async (ctx, { id, ...updates }) => {
-    const logger = getLogger(["deliverable"]);
+    const logger = getLogger(['deliverable']);
     const existing = await ctx.db
-      .query("deliverables")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('deliverables')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
     if (!existing) throw new Error(`Deliverable not found: ${id}`);
 
     const clean: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(updates)) {
-      if (v !== undefined) clean[k] = v;
+    for (const [k, val] of Object.entries(updates)) {
+      if (val !== undefined) clean[k] = val;
     }
 
     await ctx.db.patch(existing._id, { ...clean, updatedAt: Date.now() });
-    logger.info("Deliverable updated", { id });
+    logger.info('Deliverable updated', { id });
     return { id };
   },
 });
@@ -600,12 +482,12 @@ const _deliverableEvaluate = mutation({
     subject: v.string(),
     subjectId: v.string(),
     operation: operationValidator,
-    variables: v.any(),
+    variables: v.record(v.string(), v.any()),
     mutated: v.optional(v.array(v.string())),
   },
-  returns: v.any(),
+  returns: v.array(evaluateResultValidator),
   handler: async (ctx, args) => {
-    const logger = getLogger(["deliverable"]);
+    const logger = getLogger(['deliverable']);
     const results: {
       deliverableId: string;
       ready: boolean;
@@ -617,24 +499,21 @@ const _deliverableEvaluate = mutation({
     }[] = [];
 
     const deliverables = await ctx.db
-      .query("deliverables")
-      .withIndex("by_subject", q =>
-        q.eq("organizationId", args.organizationId).eq("subject", args.subject),
+      .query('deliverables')
+      .withIndex('by_subject', q =>
+        q.eq('organizationId', args.organizationId).eq('subject', args.subject),
       )
-      .filter(q => q.eq(q.field("status"), "active"))
+      .filter(q => q.eq(q.field('status'), 'active'))
       .collect();
 
-    logger.info("Evaluating", {
+    logger.info('Evaluating', {
       count: deliverables.length,
       operation: args.operation,
     });
 
     for (const d of deliverables) {
-      // Get operation-specific config
-      const opConfig
-        = d.operations[args.operation as keyof typeof d.operations];
+      const opConfig = d.operations[args.operation as keyof typeof d.operations];
       if (!opConfig) {
-        // This deliverable doesn't have config for this operation
         continue;
       }
 
@@ -645,26 +524,22 @@ const _deliverableEvaluate = mutation({
         if (!relevant) continue;
       }
 
-      // Check required cards
       const unmetCardIds: string[] = [];
       for (const cardId of opConfig.required.cardIds) {
         const val = args.variables?.[cardId];
-        if (val === undefined || val === null || val === "")
+        if (val === undefined || val === null || val === '')
           unmetCardIds.push(cardId);
       }
 
-      // Check required deliverables - look for completed evaluations for this subject
       const unmetDeliverableIds: string[] = [];
       for (const deliverableId of opConfig.required.deliverableIds) {
         const completedEval = await ctx.db
-          .query("evaluations")
-          .withIndex("by_deliverable", q =>
-            q.eq("deliverableId", deliverableId),
-          )
+          .query('evaluations')
+          .withIndex('by_deliverable', q => q.eq('deliverableId', deliverableId))
           .filter(q =>
             q.and(
-              q.eq(q.field("context.subjectId"), args.subjectId),
-              q.eq(q.field("status"), "completed"),
+              q.eq(q.field('context.subjectId'), args.subjectId),
+              q.eq(q.field('status'), 'completed'),
             ),
           )
           .first();
@@ -674,12 +549,12 @@ const _deliverableEvaluate = mutation({
         }
       }
 
-      const ready
-        = unmetCardIds.length === 0 && unmetDeliverableIds.length === 0;
+      const ready =
+        unmetCardIds.length === 0 && unmetDeliverableIds.length === 0;
 
       if (ready) {
         const evalId = crypto.randomUUID();
-        await ctx.db.insert("evaluations", {
+        await ctx.db.insert('evaluations', {
           id: evalId,
           deliverableId: d.id,
           organizationId: args.organizationId,
@@ -690,11 +565,11 @@ const _deliverableEvaluate = mutation({
             mutated: args.mutated,
           },
           variables: args.variables,
-          status: "pending",
+          status: 'pending',
           scheduledFor: d.schedule?.at,
           createdAt: Date.now(),
         });
-        logger.info("Evaluation created", {
+        logger.info('Evaluation created', {
           evalId,
           deliverableId: d.id,
           operation: args.operation,
@@ -705,8 +580,7 @@ const _deliverableEvaluate = mutation({
           unmet: { cardIds: [], deliverableIds: [] },
           evaluationId: evalId,
         });
-      }
-      else {
+      } else {
         results.push({
           deliverableId: d.id,
           ready: false,
@@ -724,70 +598,63 @@ export const deliverableCreate = _deliverableCreate;
 export const deliverableUpdate = _deliverableUpdate;
 export const deliverableEvaluate = _deliverableEvaluate;
 
-// ============================================================================
-// EVALUATION
-// ============================================================================
-
 const _evaluationGet = query({
   args: { id: v.string() },
-  returns: v.any(),
+  returns: nullable(evaluationDocValidator),
   handler: async (ctx, { id }) => {
     return ctx.db
-      .query("evaluations")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('evaluations')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
   },
 });
 
 const _evaluationList = query({
   args: { organizationId: v.string(), limit: v.optional(v.number()) },
-  returns: v.any(),
+  returns: v.array(evaluationDocValidator),
   handler: async (ctx, { organizationId, limit = 50 }) => {
     return ctx.db
-      .query("evaluations")
-      .withIndex("by_organization", q =>
-        q.eq("organizationId", organizationId),
-      )
-      .filter(q => q.eq(q.field("status"), "pending"))
-      .order("asc")
+      .query('evaluations')
+      .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+      .filter(q => q.eq(q.field('status'), 'pending'))
+      .order('asc')
       .take(limit);
   },
 });
 
 const _evaluationStart = mutation({
   args: { id: v.string() },
-  returns: v.any(),
+  returns: startedResultValidator,
   handler: async (ctx, { id }) => {
-    const logger = getLogger(["evaluation"]);
+    const logger = getLogger(['evaluation']);
     const e = await ctx.db
-      .query("evaluations")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('evaluations')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
     if (!e) throw new Error(`Evaluation not found: ${id}`);
-    if (e.status !== "pending")
-      throw new Error(`Evaluation not pending: ${id}`);
-    await ctx.db.patch(e._id, { status: "running", started: Date.now() });
-    logger.info("Evaluation started", { id });
+    if (e.status !== 'pending') throw new Error(`Evaluation not pending: ${id}`);
+    await ctx.db.patch(e._id, { status: 'running', started: Date.now() });
+    logger.info('Evaluation started', { id });
     return { started: true };
   },
 });
 
 const _evaluationCancel = mutation({
   args: { id: v.string() },
-  returns: v.any(),
+  returns: cancelledResultValidator,
   handler: async (ctx, { id }) => {
-    const logger = getLogger(["evaluation"]);
+    const logger = getLogger(['evaluation']);
     const e = await ctx.db
-      .query("evaluations")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('evaluations')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
-    if (e?.status === "pending") {
+    if (e?.status === 'pending') {
       await ctx.db.patch(e._id, {
-        status: "failed",
-        result: { success: false, error: "Cancelled" },
+        status: 'failed',
+        result: { success: false, error: 'Cancelled' },
         completedAt: Date.now(),
       });
-      logger.info("Evaluation cancelled", { id });
+      logger.info('Evaluation cancelled', { id });
     }
     return { cancelled: true };
   },
@@ -795,20 +662,20 @@ const _evaluationCancel = mutation({
 
 const _evaluationComplete = mutation({
   args: { id: v.string(), result: resultValidator },
-  returns: v.any(),
+  returns: completedResultValidator,
   handler: async (ctx, { id, result }) => {
-    const logger = getLogger(["evaluation"]);
+    const logger = getLogger(['evaluation']);
     const e = await ctx.db
-      .query("evaluations")
-      .withIndex("by_uuid", q => q.eq("id", id))
+      .query('evaluations')
+      .withIndex('by_uuid', q => q.eq('id', id))
       .unique();
     if (!e) throw new Error(`Evaluation not found: ${id}`);
     await ctx.db.patch(e._id, {
-      status: result.success ? "completed" : "failed",
+      status: result.success ? 'completed' : 'failed',
       result,
       completedAt: Date.now(),
     });
-    logger.info("Evaluation completed", { id, success: result.success });
+    logger.info('Evaluation completed', { id, success: result.success });
     return { completed: true };
   },
 });

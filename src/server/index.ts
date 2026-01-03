@@ -23,3 +23,11 @@ export type {
   EvaluationResource,
   ProcedureResource,
 } from "$/server/resources";
+
+export {
+  AuthorizationError,
+  BridgeError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "$/server/errors";

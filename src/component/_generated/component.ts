@@ -33,7 +33,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           organizationId: string;
           security: "PUBLIC" | "CONFIDENTIAL" | "RESTRICTED";
           slug: string;
-          subject: "beneficiary" | "event" | "eventInstance";
+          subject: string;
           variant:
             | "STRING"
             | "TEXT"
@@ -48,32 +48,116 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "SUBJECT"
             | "ARRAY";
         },
-        any,
+        {
+          createdAt: number;
+          createdBy: string;
+          id: string;
+          label: string;
+          organizationId: string;
+          security: "PUBLIC" | "CONFIDENTIAL" | "RESTRICTED";
+          slug: string;
+          subject: string;
+          variant:
+            | "STRING"
+            | "TEXT"
+            | "NUMBER"
+            | "BOOLEAN"
+            | "DATE"
+            | "EMAIL"
+            | "URL"
+            | "PHONE"
+            | "SSN"
+            | "ADDRESS"
+            | "SUBJECT"
+            | "ARRAY";
+        },
         Name
       >;
       cardFind: FunctionReference<
         "query",
         "internal",
         { organizationId: string; slug: string },
-        any,
+        null | {
+          createdAt: number;
+          createdBy: string;
+          id: string;
+          label: string;
+          organizationId: string;
+          security: "PUBLIC" | "CONFIDENTIAL" | "RESTRICTED";
+          slug: string;
+          subject: string;
+          variant:
+            | "STRING"
+            | "TEXT"
+            | "NUMBER"
+            | "BOOLEAN"
+            | "DATE"
+            | "EMAIL"
+            | "URL"
+            | "PHONE"
+            | "SSN"
+            | "ADDRESS"
+            | "SUBJECT"
+            | "ARRAY";
+        },
         Name
       >;
       cardGet: FunctionReference<
         "query",
         "internal",
         { id: string },
-        any,
+        null | {
+          createdAt: number;
+          createdBy: string;
+          id: string;
+          label: string;
+          organizationId: string;
+          security: "PUBLIC" | "CONFIDENTIAL" | "RESTRICTED";
+          slug: string;
+          subject: string;
+          variant:
+            | "STRING"
+            | "TEXT"
+            | "NUMBER"
+            | "BOOLEAN"
+            | "DATE"
+            | "EMAIL"
+            | "URL"
+            | "PHONE"
+            | "SSN"
+            | "ADDRESS"
+            | "SUBJECT"
+            | "ARRAY";
+        },
         Name
       >;
       cardList: FunctionReference<
         "query",
         "internal",
-        {
-          limit?: number;
+        { limit?: number; organizationId: string; subject?: string },
+        Array<{
+          createdAt: number;
+          createdBy: string;
+          id: string;
+          label: string;
           organizationId: string;
-          subject?: "beneficiary" | "event" | "eventInstance";
-        },
-        any,
+          security: "PUBLIC" | "CONFIDENTIAL" | "RESTRICTED";
+          slug: string;
+          subject: string;
+          variant:
+            | "STRING"
+            | "TEXT"
+            | "NUMBER"
+            | "BOOLEAN"
+            | "DATE"
+            | "EMAIL"
+            | "URL"
+            | "PHONE"
+            | "SSN"
+            | "ADDRESS"
+            | "SUBJECT"
+            | "ARRAY";
+        }>,
         Name
       >;
       deliverableCreate: FunctionReference<
@@ -113,7 +197,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           schedule?: { at?: number; cron?: string };
           subject: string;
         },
-        any,
+        { id: string },
         Name
       >;
       deliverableEvaluate: FunctionReference<
@@ -125,16 +209,57 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           organizationId: string;
           subject: string;
           subjectId: string;
-          variables: any;
+          variables: Record<string, any>;
         },
-        any,
+        Array<{
+          deliverableId: string;
+          evaluationId?: string;
+          ready: boolean;
+          unmet: { cardIds: Array<string>; deliverableIds: Array<string> };
+        }>,
         Name
       >;
       deliverableGet: FunctionReference<
         "query",
         "internal",
         { id: string },
-        any,
+        null | {
+          createdAt: number;
+          description?: string;
+          id: string;
+          name: string;
+          operations: {
+            create?: {
+              callbackAction?: string;
+              callbackUrl?: string;
+              required: {
+                cardIds: Array<string>;
+                deliverableIds: Array<string>;
+              };
+            };
+            delete?: {
+              callbackAction?: string;
+              callbackUrl?: string;
+              required: {
+                cardIds: Array<string>;
+                deliverableIds: Array<string>;
+              };
+            };
+            update?: {
+              callbackAction?: string;
+              callbackUrl?: string;
+              required: {
+                cardIds: Array<string>;
+                deliverableIds: Array<string>;
+              };
+            };
+          };
+          organizationId: string;
+          schedule?: { at?: number; cron?: string };
+          status: "active" | "paused";
+          subject: string;
+          updatedAt: number;
+        },
         Name
       >;
       deliverableList: FunctionReference<
@@ -146,7 +271,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           status?: "active" | "paused";
           subject?: string;
         },
-        any,
+        Array<{
+          createdAt: number;
+          description?: string;
+          id: string;
+          name: string;
+          operations: {
+            create?: {
+              callbackAction?: string;
+              callbackUrl?: string;
+              required: {
+                cardIds: Array<string>;
+                deliverableIds: Array<string>;
+              };
+            };
+            delete?: {
+              callbackAction?: string;
+              callbackUrl?: string;
+              required: {
+                cardIds: Array<string>;
+                deliverableIds: Array<string>;
+              };
+            };
+            update?: {
+              callbackAction?: string;
+              callbackUrl?: string;
+              required: {
+                cardIds: Array<string>;
+                deliverableIds: Array<string>;
+              };
+            };
+          };
+          organizationId: string;
+          schedule?: { at?: number; cron?: string };
+          status: "active" | "paused";
+          subject: string;
+          updatedAt: number;
+        }>,
         Name
       >;
       deliverableUpdate: FunctionReference<
@@ -185,14 +346,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           schedule?: { at?: number; cron?: string };
           status?: "active" | "paused";
         },
-        any,
+        { id: string },
         Name
       >;
       evaluationCancel: FunctionReference<
         "mutation",
         "internal",
         { id: string },
-        any,
+        { cancelled: boolean },
         Name
       >;
       evaluationComplete: FunctionReference<
@@ -208,28 +369,76 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             success: boolean;
           };
         },
-        any,
+        { completed: boolean },
         Name
       >;
       evaluationGet: FunctionReference<
         "query",
         "internal",
         { id: string },
-        any,
+        null | {
+          completedAt?: number;
+          context: {
+            mutated?: Array<string>;
+            subject: string;
+            subjectId: string;
+          };
+          createdAt: number;
+          deliverableId: string;
+          id: string;
+          operation: "create" | "update" | "delete";
+          organizationId: string;
+          result?: {
+            artifacts?: Array<string>;
+            duration?: number;
+            error?: string;
+            logs?: Array<string>;
+            success: boolean;
+          };
+          scheduled?: string;
+          scheduledFor?: number;
+          started?: number;
+          status: "pending" | "running" | "completed" | "failed";
+          variables: Record<string, any>;
+        },
         Name
       >;
       evaluationList: FunctionReference<
         "query",
         "internal",
         { limit?: number; organizationId: string },
-        any,
+        Array<{
+          completedAt?: number;
+          context: {
+            mutated?: Array<string>;
+            subject: string;
+            subjectId: string;
+          };
+          createdAt: number;
+          deliverableId: string;
+          id: string;
+          operation: "create" | "update" | "delete";
+          organizationId: string;
+          result?: {
+            artifacts?: Array<string>;
+            duration?: number;
+            error?: string;
+            logs?: Array<string>;
+            success: boolean;
+          };
+          scheduled?: string;
+          scheduledFor?: number;
+          started?: number;
+          status: "pending" | "running" | "completed" | "failed";
+          variables: Record<string, any>;
+        }>,
         Name
       >;
       evaluationStart: FunctionReference<
         "mutation",
         "internal",
         { id: string },
-        any,
+        { started: boolean },
         Name
       >;
       procedureCreate: FunctionReference<
@@ -246,19 +455,30 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           name: string;
           organizationId: string;
           source: "form" | "import" | "api";
-          subject?: {
-            operation: "create" | "update" | "delete";
-            type: "beneficiary" | "event" | "eventInstance";
-          };
+          subject?: { operation: "create" | "update" | "delete"; type: string };
         },
-        any,
+        { id: string },
         Name
       >;
       procedureGet: FunctionReference<
         "query",
         "internal",
         { id: string },
-        any,
+        null | {
+          cards: Array<{
+            cardId: string;
+            required: boolean;
+            writeTo: { path: string };
+          }>;
+          createdAt: number;
+          description?: string;
+          id: string;
+          name: string;
+          organizationId: string;
+          source: "form" | "import" | "api";
+          subject?: { operation: "create" | "update" | "delete"; type: string };
+          updatedAt: number;
+        },
         Name
       >;
       procedureList: FunctionReference<
@@ -269,14 +489,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           organizationId: string;
           source?: "form" | "import" | "api";
         },
-        any,
+        Array<{
+          cards: Array<{
+            cardId: string;
+            required: boolean;
+            writeTo: { path: string };
+          }>;
+          createdAt: number;
+          description?: string;
+          id: string;
+          name: string;
+          organizationId: string;
+          source: "form" | "import" | "api";
+          subject?: { operation: "create" | "update" | "delete"; type: string };
+          updatedAt: number;
+        }>,
         Name
       >;
       procedureRemove: FunctionReference<
         "mutation",
         "internal",
         { id: string },
-        any,
+        { removed: boolean },
         Name
       >;
       procedureSubmit: FunctionReference<
@@ -285,9 +519,9 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         {
           organizationId: string;
           procedureId: string;
-          subject: "beneficiary" | "event" | "eventInstance";
+          subject: string;
           subjectId: string;
-          values: any;
+          values: Record<string, any>;
         },
         {
           errors?: Array<{ field: string; message: string }>;
@@ -310,7 +544,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           name?: string;
           source?: "form" | "import" | "api";
         },
-        any,
+        { id: string },
         Name
       >;
     };
