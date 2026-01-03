@@ -6,18 +6,23 @@
  */
 
 import type {
-  Variant,
+  CardId,
+  DeliverableId,
+  DeliverableStatus,
+  Duration,
+  EvaluationId,
+  EvaluationStatus,
+  Operation,
+  OrganizationId,
+  ProcedureId,
+  Required,
+  Schedule,
   Security,
   Source,
   Subject,
-  Operation,
-  Schedule,
-  Required,
-  EvaluationStatus,
-  DeliverableStatus,
-} from './validators.js';
+  Variant,
+} from "./validators";
 
-// Re-export validator types for convenience
 export type {
   Variant,
   Security,
@@ -28,7 +33,15 @@ export type {
   Required,
   EvaluationStatus,
   DeliverableStatus,
+  Duration,
+  CardId,
+  ProcedureId,
+  DeliverableId,
+  EvaluationId,
+  OrganizationId,
 };
+
+export { createId, formatDuration, parseDuration } from "./validators";
 
 // ============================================================================
 // Card (Field Definition)
@@ -39,8 +52,8 @@ export type {
  * Cards are the atomic building blocks of the Bridge data model.
  */
 export interface Card {
-  id: string;
-  organizationId: string;
+  id: CardId;
+  organizationId: OrganizationId;
   slug: string;
   label: string;
   variant: Variant;
@@ -51,7 +64,7 @@ export interface Card {
 }
 
 export interface CardInput {
-  organizationId: string;
+  organizationId: OrganizationId;
   slug: string;
   label: string;
   variant: Variant;
@@ -68,7 +81,7 @@ export interface CardInput {
  * A card reference within a procedure, with collection-specific config.
  */
 export interface ProcedureCard {
-  cardId: string;
+  cardId: CardId;
   required: boolean;
   writeTo: { path: string };
 }
@@ -78,8 +91,8 @@ export interface ProcedureCard {
  * It specifies which cards to collect and where to write the values.
  */
 export interface Procedure {
-  id: string;
-  organizationId: string;
+  id: ProcedureId;
+  organizationId: OrganizationId;
   name: string;
   description?: string;
   source: Source;
@@ -93,8 +106,8 @@ export interface Procedure {
 }
 
 export interface ProcedureInput {
-  id: string;
-  organizationId: string;
+  id: ProcedureId;
+  organizationId: OrganizationId;
   name: string;
   description?: string;
   source: Source;
@@ -142,8 +155,8 @@ export interface DeliverableOperations {
  * Optional scheduling via UTC timestamp or cron.
  */
 export interface Deliverable {
-  id: string;
-  organizationId: string;
+  id: DeliverableId;
+  organizationId: OrganizationId;
   name: string;
   description?: string;
   subject: Subject;
@@ -155,8 +168,8 @@ export interface Deliverable {
 }
 
 export interface DeliverableInput {
-  id: string;
-  organizationId: string;
+  id: DeliverableId;
+  organizationId: OrganizationId;
   name: string;
   description?: string;
   subject: Subject;
@@ -180,9 +193,9 @@ export interface DeliverableUpdate {
  * An Evaluation tracks when a deliverable was triggered and its execution state.
  */
 export interface Evaluation {
-  id: string;
-  deliverableId: string;
-  organizationId: string;
+  id: EvaluationId;
+  deliverableId: DeliverableId;
+  organizationId: OrganizationId;
   operation: Operation;
   context: EvaluationContext;
   variables: Record<string, unknown>;
@@ -223,7 +236,7 @@ export interface EvaluationResult {
  * Input for evaluating deliverables.
  */
 export interface EvaluateDeliverablesInput {
-  organizationId: string;
+  organizationId: OrganizationId;
   subject: Subject;
   subjectId: string;
   variables: Record<string, unknown>;
@@ -234,13 +247,13 @@ export interface EvaluateDeliverablesInput {
  * Result of checking a deliverable's readiness.
  */
 export interface DeliverableResult {
-  deliverableId: string;
+  deliverableId: DeliverableId;
   ready: boolean;
   unmet: {
-    cardIds: string[];
-    deliverableIds: string[];
+    cardIds: CardId[];
+    deliverableIds: DeliverableId[];
   };
-  evaluationId?: string;
+  evaluationId?: EvaluationId;
 }
 
 // ============================================================================
@@ -276,8 +289,8 @@ export interface EvaluationListOptions extends ListOptions {
  * Input for submitting card values through a procedure.
  */
 export interface Submission {
-  procedureId: string;
-  organizationId: string;
+  procedureId: ProcedureId;
+  organizationId: OrganizationId;
   subject: Subject;
   subjectId: string;
   values: Record<string, unknown>;
@@ -328,7 +341,7 @@ export interface ExecutionResult {
  */
 export type CallbackHandler = (
   deliverable: Deliverable,
-  context: ExecutionContext
+  context: ExecutionContext,
 ) => Promise<ExecutionResult>;
 
 /**
@@ -336,7 +349,7 @@ export type CallbackHandler = (
  * If `variables` is omitted and subjects are bound, Bridge will auto-resolve from the bound table.
  */
 export interface EvaluateTrigger {
-  organizationId: string;
+  organizationId: OrganizationId;
   subject: Subject;
   subjectId: string;
   operation: Operation;

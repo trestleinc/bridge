@@ -6,15 +6,15 @@
 
 // Error types
 export {
-  NetworkError,
   AuthorizationError,
+  NetworkError,
+  NonRetriableError,
   NotFoundError,
   ValidationError,
-  NonRetriableError,
-} from '$/client/errors.js';
+} from "$/client/errors";
 
 // Logger utility
-export { getLogger } from '$/client/logger.js';
+export { getLogger } from "$/client/logger";
 
 // Re-export shared types and validators for convenience
-export * from '$/shared/index.js';
+export * from "$/shared/index";

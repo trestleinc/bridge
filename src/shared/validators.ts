@@ -93,7 +93,8 @@ const sourceDisplayNames: Record<Source, string> = {
 
 export const Source = {
   ...sourceValues,
-  valid: (value: string): value is Source => Object.values(sourceValues).includes(value as Source),
+  valid: (value: string): value is Source =>
+    Object.values(sourceValues).includes(value as Source),
   display: (s: Source): string => sourceDisplayNames[s],
 } as const;
 
@@ -143,7 +144,8 @@ const evaluationStatusValues = {
   FAILED: "failed",
 } as const;
 
-export type EvaluationStatus = (typeof evaluationStatusValues)[keyof typeof evaluationStatusValues];
+export type EvaluationStatus
+  = (typeof evaluationStatusValues)[keyof typeof evaluationStatusValues];
 
 export const EvaluationStatus = {
   ...evaluationStatusValues,
@@ -166,15 +168,84 @@ export const DeliverableStatus = {
 } as const;
 
 // ============================================================================
+// Duration (Template Literal Type)
+// ============================================================================
+
+type TimeUnit = "s" | "m" | "h" | "d";
+
+export type Duration = `${number}${TimeUnit}`;
+
+const DURATION_MS: Record<TimeUnit, number> = {
+  s: 1_000,
+  m: 60_000,
+  h: 3_600_000,
+  d: 86_400_000,
+};
+
+export function parseDuration(duration: Duration): number {
+  const match = /^(\d+)(s|m|h|d)$/i.exec(duration);
+  if (!match) throw new Error(`Invalid duration: ${duration}`);
+  const value = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase() as TimeUnit;
+  return value * DURATION_MS[unit];
+}
+
+export function formatDuration(ms: number): Duration {
+  if (ms >= DURATION_MS.d && ms % DURATION_MS.d === 0) {
+    return `${ms / DURATION_MS.d}d` as Duration;
+  }
+  if (ms >= DURATION_MS.h && ms % DURATION_MS.h === 0) {
+    return `${ms / DURATION_MS.h}h` as Duration;
+  }
+  if (ms >= DURATION_MS.m && ms % DURATION_MS.m === 0) {
+    return `${ms / DURATION_MS.m}m` as Duration;
+  }
+  return `${ms / DURATION_MS.s}s` as Duration;
+}
+
+// ============================================================================
+// Branded Types (Compile-Time ID Safety)
+// ============================================================================
+
+declare const CARD_ID: unique symbol;
+declare const PROCEDURE_ID: unique symbol;
+declare const DELIVERABLE_ID: unique symbol;
+declare const EVALUATION_ID: unique symbol;
+declare const ORGANIZATION_ID: unique symbol;
+
+export type CardId = string & { readonly [CARD_ID]: typeof CARD_ID };
+export type ProcedureId = string & {
+  readonly [PROCEDURE_ID]: typeof PROCEDURE_ID;
+};
+export type DeliverableId = string & {
+  readonly [DELIVERABLE_ID]: typeof DELIVERABLE_ID;
+};
+export type EvaluationId = string & {
+  readonly [EVALUATION_ID]: typeof EVALUATION_ID;
+};
+export type OrganizationId = string & {
+  readonly [ORGANIZATION_ID]: typeof ORGANIZATION_ID;
+};
+
+export const createId = {
+  card: (id: string) => id as CardId,
+  procedure: (id: string) => id as ProcedureId,
+  deliverable: (id: string) => id as DeliverableId,
+  evaluation: (id: string) => id as EvaluationId,
+  organization: (id: string) => id as OrganizationId,
+} as const;
+
+// ============================================================================
 // Composite Types (TypeScript only, no validators)
 // ============================================================================
 
 export interface Schedule {
   at?: number;
+  delay?: Duration;
   cron?: string;
 }
 
 export interface Required {
-  cardIds: string[];
-  deliverableIds: string[];
+  cardIds: CardId[];
+  deliverableIds: DeliverableId[];
 }
