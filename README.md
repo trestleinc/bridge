@@ -57,31 +57,13 @@ export const b = bridge(components.bridge)({
 
 ```typescript
 // convex/cards.ts
-import { query, mutation } from './_generated/server';
-import { v } from 'convex/values';
 import { b } from './bridge';
 
-export const list = query({
-  args: { organizationId: v.string() },
-  handler: async (ctx, { organizationId }) => {
-    return ctx.runQuery(b.api.card.list, { organizationId });
-  },
-});
-
-export const create = mutation({
-  args: {
-    organizationId: v.string(),
-    slug: v.string(),
-    label: v.string(),
-    type: v.string(),
-    securityLevel: v.string(),
-    subjectType: v.string(),
-    createdBy: v.string(),
-  },
-  handler: async (ctx, args) => {
-    return ctx.runMutation(b.api.card.create, args);
-  },
-});
+// Export bridge resources directly as Convex functions
+export const get = b.cards.get;
+export const find = b.cards.find;
+export const list = b.cards.list;
+export const create = b.cards.create;
 ```
 
 ## API Reference
@@ -92,10 +74,10 @@ Field definitions with types and security metadata.
 
 | Method | Description |
 |--------|-------------|
-| `card.get` | Get a card by ID |
-| `card.find` | Find a card by organization and slug |
-| `card.list` | List cards for an organization |
-| `card.create` | Create a new card |
+| `b.cards.get` | Get a card by ID |
+| `b.cards.find` | Find a card by organization and slug |
+| `b.cards.list` | List cards for an organization |
+| `b.cards.create` | Create a new card |
 
 ### Procedures
 
@@ -103,12 +85,12 @@ Data collection definitions (forms, imports, APIs).
 
 | Method | Description |
 |--------|-------------|
-| `procedure.get` | Get a procedure by ID |
-| `procedure.list` | List procedures for an organization |
-| `procedure.create` | Create a new procedure |
-| `procedure.update` | Update an existing procedure |
-| `procedure.remove` | Delete a procedure |
-| `procedure.submit` | Validate card values against procedure schema |
+| `b.procedures.get` | Get a procedure by ID |
+| `b.procedures.list` | List procedures for an organization |
+| `b.procedures.create` | Create a new procedure |
+| `b.procedures.update` | Update an existing procedure |
+| `b.procedures.remove` | Delete a procedure |
+| `b.procedures.submit` | Validate card values against procedure schema |
 
 ### Deliverables
 
@@ -116,11 +98,11 @@ Reactive triggers with conditions.
 
 | Method | Description |
 |--------|-------------|
-| `deliverable.get` | Get a deliverable by ID |
-| `deliverable.list` | List deliverables for an organization |
-| `deliverable.create` | Create a new deliverable |
-| `deliverable.update` | Update an existing deliverable |
-| `deliverable.evaluate` | Check and trigger ready deliverables |
+| `b.deliverables.get` | Get a deliverable by ID |
+| `b.deliverables.list` | List deliverables for an organization |
+| `b.deliverables.create` | Create a new deliverable |
+| `b.deliverables.update` | Update an existing deliverable |
+| `b.deliverables.evaluate` | Check and trigger ready deliverables |
 
 ### Evaluations
 
@@ -128,11 +110,11 @@ Execution records for triggered deliverables.
 
 | Method | Description |
 |--------|-------------|
-| `evaluation.get` | Get an evaluation by ID |
-| `evaluation.list` | List evaluations for a deliverable |
-| `evaluation.start` | Start a scheduled evaluation |
-| `evaluation.cancel` | Cancel a pending evaluation |
-| `evaluation.complete` | Mark an evaluation as complete |
+| `b.evaluations.get` | Get an evaluation by ID |
+| `b.evaluations.list` | List evaluations for a deliverable |
+| `b.evaluations.start` | Start a scheduled evaluation |
+| `b.evaluations.cancel` | Cancel a pending evaluation |
+| `b.evaluations.complete` | Mark an evaluation as complete |
 
 ## Data Model
 
@@ -144,9 +126,9 @@ interface Card {
   organizationId: string;
   slug: string;
   label: string;
-  type: CardType;           // 'text' | 'number' | 'boolean' | 'date' | 'json'
-  securityLevel: SecurityLevel; // 'public' | 'internal' | 'confidential' | 'restricted'
-  subjectType: SubjectType; // 'person' | 'organization' | 'transaction'
+  variant: Variant;         // 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | ...
+  security: Security;       // 'PUBLIC' | 'CONFIDENTIAL' | 'RESTRICTED'
+  subject: string;
   createdBy: string;
   createdAt: number;
 }
@@ -160,10 +142,10 @@ interface Procedure {
   organizationId: string;
   name: string;
   description?: string;
-  type: ProcedureType;      // 'form' | 'import' | 'api'
+  source: Source;           // 'form' | 'import' | 'api'
   subject?: {
-    type: SubjectType;
-    operation: Operation;   // 'create' | 'update' | 'upsert'
+    type: string;
+    operation: Operation;   // 'create' | 'update' | 'delete'
   };
   cards: ProcedureCard[];   // Cards to collect with field mappings
   createdAt: number;
@@ -179,13 +161,10 @@ interface Deliverable {
   organizationId: string;
   name: string;
   description?: string;
-  subjectType: SubjectType;
-  requiredCards: string[];  // Card slugs that must be present
-  callbackUrl?: string;     // HTTP callback when triggered
-  callbackAction?: string;  // Convex action reference
-  prerequisites?: Prerequisite[];
-  conditions?: Conditions;
-  status: DeliverableStatus; // 'active' | 'paused' | 'archived'
+  subject: string;
+  operations: DeliverableOperations;
+  schedule?: Schedule;
+  status: DeliverableStatus; // 'active' | 'paused'
   createdAt: number;
   updatedAt: number;
 }
@@ -198,19 +177,12 @@ interface Evaluation {
   id: string;
   deliverableId: string;
   organizationId: string;
-  context: {
-    subjectType: SubjectType;
-    subjectId: string;
-    changedFields?: string[];
-  };
+  operation: Operation;
+  context: EvaluationContext;
   variables: Record<string, unknown>;
-  status: EvaluationStatus; // 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+  status: EvaluationStatus; // 'pending' | 'running' | 'completed' | 'failed'
   scheduledFor?: number;
-  result?: {
-    success: boolean;
-    duration?: number;
-    error?: string;
-  };
+  result?: EvaluationResult;
   createdAt: number;
   completedAt?: number;
 }
@@ -228,17 +200,13 @@ Validate and submit card values through a procedure:
 const result = await b.submit(ctx, {
   procedureId: 'proc_123',
   organizationId: 'org_456',
-  subjectType: 'beneficiary',
+  subject: 'beneficiary',
   subjectId: 'ben_789',
   values: { firstName: 'John', lastName: 'Doe' },
 });
 
 if (result.success) {
   // Write validated values to your tables
-  await ctx.runMutation(internal.subjects.update, {
-    id: 'ben_789',
-    ...result.validated,
-  });
 }
 ```
 
@@ -250,17 +218,9 @@ Trigger deliverable evaluation for a subject. If subjects are bound, variables a
 // With auto-resolution (subjects bound) - no variables needed!
 const readiness = await b.evaluate(ctx, {
   organizationId: 'org_456',
-  subjectType: 'beneficiary',
+  subject: 'beneficiary',
   subjectId: 'ben_789',
-});
-
-// Or with explicit variables (overrides auto-resolution):
-const readiness = await b.evaluate(ctx, {
-  organizationId: 'org_456',
-  subjectType: 'beneficiary',
-  subjectId: 'ben_789',
-  variables: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
-  changedFields: ['email'],
+  operation: 'create',
 });
 
 for (const r of readiness) {
@@ -290,18 +250,9 @@ b.register('automation', async (deliverable, context) => {
   return { success: true, data: { sent: true } };
 });
 
-b.register('webhook', async (deliverable, context) => {
-  // Send HTTP webhook
-  const response = await fetch(deliverable.callbackUrl!, {
-    method: 'POST',
-    body: JSON.stringify(context),
-  });
-  return { success: response.ok };
-});
-
 // Execute in an action
-const result = await b.execute(deliverable, {
-  subjectType: 'beneficiary',
+const result = await b.execute(deliverable, 'create', {
+  subject: 'beneficiary',
   subjectId: 'ben_789',
   variables: { firstName: 'John' },
 });
@@ -332,40 +283,23 @@ Configure authorization and side effects:
 
 ```typescript
 const b = bridge(components.bridge)({
-  subjects: {
-    beneficiary: 'beneficiaries',
-    event: 'events',
-    eventInstance: 'eventInstances',
+  subjects: { ... },
+  cards: {
+    hooks: {
+      evalRead: async (ctx, organizationId) => { /* auth check */ },
+      evalWrite: async (ctx, doc) => { /* auth check */ },
+      onInsert: async (ctx, doc) => { /* side effect */ },
+    },
   },
-  hooks: {
-    // Authorization
-    read: async (ctx, organizationId) => {
-      // Verify user can read this organization's data
-    },
-    write: async (ctx, organizationId) => {
-      // Verify user can write to this organization
-    },
-
-    // Side effects - namespaced by entity type
-    card: {
-      insert: async (ctx, card) => {
-        // React to card creation
-      },
-    },
-    procedure: {
-      insert: async (ctx, procedure) => {
-        // React to procedure creation
-      },
-    },
-    deliverable: {
-      trigger: async (ctx, evaluation) => {
-        // React when a deliverable is triggered
-      },
-    },
-    evaluation: {
-      complete: async (ctx, evaluation) => {
-        // React when an evaluation completes
-      },
+  procedures: {
+    hooks: { ... },
+  },
+  deliverables: {
+    hooks: { ... },
+  },
+  evaluations: {
+    hooks: {
+      onComplete: async (ctx, evaluation) => { /* react to completion */ },
     },
   },
 });
