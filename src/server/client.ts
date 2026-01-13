@@ -76,9 +76,9 @@ import {
 import type { BridgeComponentApi } from "./bridge";
 import type { SubjectConfig } from "$/shared/validators";
 
-type AnyQueryCtx = GenericQueryCtx<GenericDataModel>;
-type AnyMutationCtx = GenericMutationCtx<GenericDataModel>;
-type AnyCtx = AnyQueryCtx | AnyMutationCtx;
+export type AnyQueryCtx = GenericQueryCtx<GenericDataModel>;
+export type AnyMutationCtx = GenericMutationCtx<GenericDataModel>;
+export type AnyCtx = AnyQueryCtx | AnyMutationCtx;
 
 // ============================================================================
 // Types

@@ -35,8 +35,8 @@ type Change = {
 	newDoc: DocumentWithAttributes | null;
 };
 
-export type TriggerHandler = (
-	ctx: GenericMutationCtx<GenericDataModel>,
+export type TriggerHandler<D extends GenericDataModel = GenericDataModel> = (
+	ctx: GenericMutationCtx<D>,
 	change: Change,
 ) => Promise<void>;
 
@@ -126,14 +126,14 @@ export function extractAttributeChanges(
  * @param config - Subject configuration including tracked fields
  * @returns A trigger handler function compatible with convex-helpers triggers
  */
-export function createSubjectTrigger(
+export function createSubjectTrigger<D extends GenericDataModel = GenericDataModel>(
 	component: BridgeComponentApi,
 	subjectName: string,
 	config: SubjectConfig,
-): TriggerHandler {
+): TriggerHandler<D> {
 	const { trackedFields = [] } = config;
 
-	return async (ctx: GenericMutationCtx<GenericDataModel>, change: Change): Promise<void> => {
+	return (async (ctx: GenericMutationCtx<GenericDataModel>, change: Change): Promise<void> => {
 		// Skip delete operations - deliverables typically don't need to evaluate on delete
 		if (change.operation === "delete") {
 			return;
@@ -182,7 +182,7 @@ export function createSubjectTrigger(
 			operation,
 			mutated: changedFields,
 		});
-	};
+	}) as TriggerHandler<D>;
 }
 
 // ============================================================================
@@ -219,14 +219,14 @@ export type SubjectsConfig = Record<string, SubjectConfig>;
  * @param subjects - Configuration for all subjects
  * @returns Record mapping table names to trigger handlers
  */
-export function createTriggers(
+export function createTriggers<D extends GenericDataModel = GenericDataModel>(
 	component: BridgeComponentApi,
 	subjects: SubjectsConfig,
-): Record<string, TriggerHandler> {
-	const handlers: Record<string, TriggerHandler> = {};
+): Record<string, TriggerHandler<D>> {
+	const handlers: Record<string, TriggerHandler<D>> = {};
 
 	for (const [subjectName, config] of Object.entries(subjects)) {
-		const handler = createSubjectTrigger(component, subjectName, config);
+		const handler = createSubjectTrigger<D>(component, subjectName, config);
 		handlers[config.table] = handler;
 	}
 

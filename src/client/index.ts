@@ -15,6 +15,3 @@ export {
 
 // Logger utility
 export { getLogger } from "$/client/logger";
-
-// Re-export shared types and validators for convenience
-export * from "$/shared/index";

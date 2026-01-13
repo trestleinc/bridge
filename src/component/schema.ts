@@ -85,5 +85,7 @@ export default defineSchema({
 		.index("by_uuid", ["id"])
 		.index("by_deliverable", ["deliverableId"])
 		.index("by_organization", ["organizationId"])
-		.index("by_status", ["status", "scheduledFor"]),
+		.index("by_status", ["status", "scheduledFor"])
+		.index("by_organization_deliverable", ["organizationId", "deliverableId"])
+		.index("by_organization_status", ["organizationId", "status"]),
 });

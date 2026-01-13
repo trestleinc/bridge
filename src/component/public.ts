@@ -590,14 +590,37 @@ const _evaluationGet = query({
 });
 
 const _evaluationList = query({
-	args: { organizationId: v.string(), limit: v.optional(v.number()) },
+	args: {
+		organizationId: v.string(),
+		deliverableId: v.optional(v.string()),
+		status: v.optional(v.string()),
+		limit: v.optional(v.number()),
+	},
 	returns: v.array(evaluationDocValidator),
-	handler: async (ctx, { organizationId, limit = 50 }) => {
+	handler: async (ctx, { organizationId, deliverableId, status, limit = 50 }) => {
+		// Use most specific index available
+		if (deliverableId) {
+			return ctx.db
+				.query("evaluations")
+				.withIndex("by_organization_deliverable", q =>
+					q.eq("organizationId", organizationId).eq("deliverableId", deliverableId),
+				)
+				.order("desc")
+				.take(limit);
+		}
+		if (status) {
+			return ctx.db
+				.query("evaluations")
+				.withIndex("by_organization_status", q =>
+					q.eq("organizationId", organizationId).eq("status", status),
+				)
+				.order("desc")
+				.take(limit);
+		}
 		return ctx.db
 			.query("evaluations")
 			.withIndex("by_organization", q => q.eq("organizationId", organizationId))
-			.filter(q => q.eq(q.field("status"), "pending"))
-			.order("asc")
+			.order("desc")
 			.take(limit);
 	},
 });

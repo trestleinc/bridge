@@ -8,7 +8,7 @@ export type { BridgeOptions } from "$/server/bridge";
 export { bridge } from "$/server/bridge";
 
 // Client API (recommended pattern - matches Crane)
-export { clientApi, type BridgeClientOptions } from "$/server/client";
+export { clientApi, type BridgeClientOptions, type AnyCtx } from "$/server/client";
 
 // Resource types for advanced usage
 export type {
