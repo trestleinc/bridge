@@ -72,49 +72,49 @@ export const create = b.cards.create;
 
 Field definitions with types and security metadata.
 
-| Method | Description |
-|--------|-------------|
-| `b.cards.get` | Get a card by ID |
-| `b.cards.find` | Find a card by organization and slug |
-| `b.cards.list` | List cards for an organization |
-| `b.cards.create` | Create a new card |
+| Method           | Description                          |
+| ---------------- | ------------------------------------ |
+| `b.cards.get`    | Get a card by ID                     |
+| `b.cards.find`   | Find a card by organization and slug |
+| `b.cards.list`   | List cards for an organization       |
+| `b.cards.create` | Create a new card                    |
 
 ### Procedures
 
 Data collection definitions (forms, imports, APIs).
 
-| Method | Description |
-|--------|-------------|
-| `b.procedures.get` | Get a procedure by ID |
-| `b.procedures.list` | List procedures for an organization |
-| `b.procedures.create` | Create a new procedure |
-| `b.procedures.update` | Update an existing procedure |
-| `b.procedures.remove` | Delete a procedure |
+| Method                | Description                                   |
+| --------------------- | --------------------------------------------- |
+| `b.procedures.get`    | Get a procedure by ID                         |
+| `b.procedures.list`   | List procedures for an organization           |
+| `b.procedures.create` | Create a new procedure                        |
+| `b.procedures.update` | Update an existing procedure                  |
+| `b.procedures.remove` | Delete a procedure                            |
 | `b.procedures.submit` | Validate card values against procedure schema |
 
 ### Deliverables
 
 Reactive triggers with conditions.
 
-| Method | Description |
-|--------|-------------|
-| `b.deliverables.get` | Get a deliverable by ID |
-| `b.deliverables.list` | List deliverables for an organization |
-| `b.deliverables.create` | Create a new deliverable |
-| `b.deliverables.update` | Update an existing deliverable |
-| `b.deliverables.evaluate` | Check and trigger ready deliverables |
+| Method                    | Description                           |
+| ------------------------- | ------------------------------------- |
+| `b.deliverables.get`      | Get a deliverable by ID               |
+| `b.deliverables.list`     | List deliverables for an organization |
+| `b.deliverables.create`   | Create a new deliverable              |
+| `b.deliverables.update`   | Update an existing deliverable        |
+| `b.deliverables.evaluate` | Check and trigger ready deliverables  |
 
 ### Evaluations
 
 Execution records for triggered deliverables.
 
-| Method | Description |
-|--------|-------------|
-| `b.evaluations.get` | Get an evaluation by ID |
-| `b.evaluations.list` | List evaluations for a deliverable |
-| `b.evaluations.start` | Start a scheduled evaluation |
-| `b.evaluations.cancel` | Cancel a pending evaluation |
-| `b.evaluations.complete` | Mark an evaluation as complete |
+| Method                   | Description                        |
+| ------------------------ | ---------------------------------- |
+| `b.evaluations.get`      | Get an evaluation by ID            |
+| `b.evaluations.list`     | List evaluations for a deliverable |
+| `b.evaluations.start`    | Start a scheduled evaluation       |
+| `b.evaluations.cancel`   | Cancel a pending evaluation        |
+| `b.evaluations.complete` | Mark an evaluation as complete     |
 
 ## Data Model
 
@@ -273,6 +273,7 @@ const b = bridge(components.bridge)({
 ```
 
 When subjects are bound, Bridge can automatically fetch subject data when evaluating deliverables. Your host tables must have:
+
 - An `id` field (UUID string)
 - An `attributes` array with `{ slug, value }` objects
 - A `by_uuid` index on the `id` field

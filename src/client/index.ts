@@ -6,11 +6,11 @@
 
 // Error types
 export {
-  AuthorizationError,
-  NetworkError,
-  NonRetriableError,
-  NotFoundError,
-  ValidationError,
+	AuthorizationError,
+	NetworkError,
+	NonRetriableError,
+	NotFoundError,
+	ValidationError,
 } from "$/client/errors";
 
 // Logger utility

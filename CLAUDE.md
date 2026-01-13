@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **CRITICAL**: When looking up documentation for any library (Convex, Effect, etc.), ALWAYS use the Context7 MCP tool. NEVER use WebSearch for library documentation.
 
 **Usage pattern:**
+
 1. First resolve the library ID: `mcp__context7__resolve-library-id` with library name
 2. Then fetch docs: `mcp__context7__get-library-docs` with the resolved ID and topic
 
@@ -15,6 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Bridge** (`@trestleinc/bridge`) - Reactive data layer for schema-driven Cards, Procedures, and Deliverables.
 
 Single package with exports:
+
 - `@trestleinc/bridge` - Shared types and validators
 - `@trestleinc/bridge/client` - Client utilities (errors, logger)
 - `@trestleinc/bridge/server` - Server helpers (bridge factory)
@@ -32,6 +34,7 @@ bun run prepublish   # Runs build (which includes linting)
 ```
 
 **Note:** Linting, formatting, and type checking run automatically during `bun run build` via rslib plugins:
+
 - `pluginEslint` with `fix: true` - runs ESLint and auto-fixes issues
 - `pluginTypeCheck` - runs TypeScript type checking
 - `@stylistic/eslint-plugin` - handles code formatting (indentation, quotes, semicolons)
@@ -39,6 +42,7 @@ bun run prepublish   # Runs build (which includes linting)
 ## Architecture
 
 ### Package Structure
+
 ```
 src/
 ├── client/                  # Client-side utilities
@@ -69,12 +73,14 @@ src/
 ### Core Concepts
 
 **Data Model:**
+
 - **Cards** - Field definitions with types, security levels, and subject associations
 - **Procedures** - Data collection definitions (forms, imports, APIs)
 - **Deliverables** - Reactive triggers with prerequisites and conditions
 - **Evaluations** - Execution records for triggered deliverables
 
 **Data Flow:**
+
 ```
 Card definitions -> Procedures collect data -> Deliverables trigger -> Evaluations track execution
 ```
@@ -82,6 +88,7 @@ Card definitions -> Procedures collect data -> Deliverables trigger -> Evaluatio
 ## Public API Surface
 
 ### Client (`@trestleinc/bridge/client`)
+
 ```typescript
 // Error types
 NetworkError
@@ -95,11 +102,13 @@ getLogger()
 ```
 
 ### Server (`@trestleinc/bridge/server`)
+
 ```typescript
 bridge()              // Factory to create bridge instance bound to component
 ```
 
 ### Shared (`@trestleinc/bridge`)
+
 ```typescript
 // Types
 Card, CardInput
@@ -114,6 +123,7 @@ evaluationStatusValidator, deliverableStatusValidator
 ```
 
 ### Resource API (via bridge instance)
+
 ```typescript
 b.cards.get, b.cards.find, b.cards.list, b.cards.create
 b.procedures.get, b.procedures.list, b.procedures.create, b.procedures.update, b.procedures.remove, b.procedures.submit
@@ -122,6 +132,7 @@ b.evaluations.get, b.evaluations.list, b.evaluations.start, b.evaluations.cancel
 ```
 
 ### Bridge Methods
+
 ```typescript
 b.submit(ctx, submission)           // Validate card values through procedure
 b.evaluate(ctx, trigger)            // Check and trigger deliverables (auto-resolves if subjects bound)
@@ -134,6 +145,7 @@ b.aggregate(ctx, input)             // Aggregate context from subject hierarchy
 ## Key Patterns
 
 ### Server: bridge Factory
+
 ```typescript
 // convex/bridge.ts (create once)
 import { bridge } from '@trestleinc/bridge/server';
@@ -167,6 +179,7 @@ export const b = bridge(components.bridge)({
 ```
 
 ### Using the Bridge API
+
 ```typescript
 // convex/cards.ts
 import { b } from './bridge';
@@ -185,7 +198,7 @@ export const create = b.cards.create;
 - **Convex** for backend (cloud database + functions)
 - **Rslib** for building (with ESLint + TypeScript plugins)
 - **ESLint** for linting (runs during build via rslib plugin)
-- **LogTape** for logging (avoid console.*)
+- **LogTape** for logging (avoid console.\*)
 
 ## Naming Conventions
 
@@ -196,7 +209,7 @@ export const create = b.cards.create;
 ## Important Notes
 
 - **Linting runs during build** - ESLint runs via rslib's `pluginEslint` during `bun run build`
-- **LogTape logging** - Use LogTape, not console.*
+- **LogTape logging** - Use LogTape, not console.\*
 - **Import types** - Use `import type` for type-only imports
 - **bun for commands** - Use `bun run` not `pnpm run` for all commands
 - **Organization-scoped** - All data is scoped by `organizationId`

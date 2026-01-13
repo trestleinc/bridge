@@ -1,12 +1,14 @@
 # AGENTS.md - Development Guide
 
 ## Commands
+
 - **Build:** `bun run build` (uses Rslib, outputs to `dist/`)
 - **Test:** `bun test` (Vitest). Run single: `bun test src/path/to/test.ts`
 - **Lint & Format:** `bun run check:fix` (Biome) - **ALWAYS RUN BEFORE COMMITTING**
 - **Type Check:** Build includes type checking via Rslib
 
 ## Code Style & Conventions
+
 - **Formatting:** 2 spaces, single quotes, semicolons (enforced by Biome).
 - **Imports:** Use `import type` for types. Use `node:` protocol for Node built-ins.
 - **Logging:** Use `LogTape`. Avoid `console.*` (warns in Biome, allowed in tests).
@@ -17,11 +19,13 @@
 ## Public API
 
 ### Server (`@trestleinc/bridge/server`)
+
 ```typescript
 bridge(component)(options)  // Factory to create bridge instance with hooks
 ```
 
 ### Bridge Options
+
 ```typescript
 const b = bridge(components.bridge)({
   subjects: { beneficiary: 'beneficiaries' },
@@ -33,6 +37,7 @@ const b = bridge(components.bridge)({
 ```
 
 ### Resources (Direct Access)
+
 ```typescript
 b.cards.get, b.cards.find, b.cards.list, b.cards.create
 b.procedures.get, b.procedures.list, b.procedures.create, b.procedures.update, b.procedures.remove, b.procedures.submit
@@ -41,6 +46,7 @@ b.evaluations.get, b.evaluations.list, b.evaluations.start, b.evaluations.cancel
 ```
 
 ### Bridge Methods
+
 ```typescript
 b.submit(ctx, submission)   // Validate card values
 b.evaluate(ctx, trigger)    // Check and trigger deliverables (auto-resolves if subjects bound)
@@ -51,6 +57,7 @@ b.aggregate(ctx, input)     // Aggregate context from subject hierarchy
 ```
 
 ### Hooks
+
 ```typescript
 evalRead(ctx, organizationId)     // Before read (throw to deny)
 evalWrite(ctx, doc)               // Before write (throw to deny)
@@ -63,12 +70,14 @@ transform(docs)                   // Transform results before returning
 ```
 
 ### Client (`@trestleinc/bridge/client`)
+
 ```typescript
 NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError
 getLogger()           // LogTape logger
 ```
 
 ### Type Safety
+
 ```typescript
 CardId, ProcedureId, DeliverableId, EvaluationId, OrganizationId  // Branded ID types
 Duration              // Template literal type: "30s", "5m", "2h", "7d"
@@ -78,6 +87,7 @@ createId.card(s)      // Create typed IDs
 ```
 
 ## Critical Rules (from CLAUDE.md)
+
 - NEVER use WebSearch for library documentation; use Context7.
 - Use `bun` for all commands.
 - Resource pattern: `b.cards.get`, `b.procedures.list`, etc.
