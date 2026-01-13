@@ -21,69 +21,82 @@
 ### Server (`@trestleinc/bridge/server`)
 
 ```typescript
-bridge(component)(options)  // Factory to create bridge instance with hooks
+bridge(component)(options); // Factory to create bridge instance with hooks
 ```
 
 ### Bridge Options
 
 ```typescript
 const b = bridge(components.bridge)({
-  subjects: { beneficiary: 'beneficiaries' },
-  cards: { hooks: { evalRead, onInsert } },
-  procedures: { hooks: { evalWrite } },
-  deliverables: { hooks: { evalRead } },
-  evaluations: { hooks: { onComplete } },
+	subjects: { beneficiary: "beneficiaries" },
+	cards: { hooks: { evalRead, onInsert } },
+	procedures: { hooks: { evalWrite } },
+	deliverables: { hooks: { evalRead } },
+	evaluations: { hooks: { onComplete } },
 });
 ```
 
 ### Resources (Direct Access)
 
 ```typescript
-b.cards.get, b.cards.find, b.cards.list, b.cards.create
-b.procedures.get, b.procedures.list, b.procedures.create, b.procedures.update, b.procedures.remove, b.procedures.submit
-b.deliverables.get, b.deliverables.list, b.deliverables.create, b.deliverables.update, b.deliverables.evaluate
-b.evaluations.get, b.evaluations.list, b.evaluations.start, b.evaluations.cancel, b.evaluations.complete
+(b.cards.get, b.cards.find, b.cards.list, b.cards.create);
+(b.procedures.get,
+	b.procedures.list,
+	b.procedures.create,
+	b.procedures.update,
+	b.procedures.remove,
+	b.procedures.submit);
+(b.deliverables.get,
+	b.deliverables.list,
+	b.deliverables.create,
+	b.deliverables.update,
+	b.deliverables.evaluate);
+(b.evaluations.get,
+	b.evaluations.list,
+	b.evaluations.start,
+	b.evaluations.cancel,
+	b.evaluations.complete);
 ```
 
 ### Bridge Methods
 
 ```typescript
-b.submit(ctx, submission)   // Validate card values
-b.evaluate(ctx, trigger)    // Check and trigger deliverables (auto-resolves if subjects bound)
-b.resolve(ctx, type, id)    // Resolve subject data from bound table
-b.execute(deliverable, op, ctx) // Run registered callback
-b.register(type, handler)   // Register callback handler
-b.aggregate(ctx, input)     // Aggregate context from subject hierarchy
+b.submit(ctx, submission); // Validate card values
+b.evaluate(ctx, trigger); // Check and trigger deliverables (auto-resolves if subjects bound)
+b.resolve(ctx, type, id); // Resolve subject data from bound table
+b.execute(deliverable, op, ctx); // Run registered callback
+b.register(type, handler); // Register callback handler
+b.aggregate(ctx, input); // Aggregate context from subject hierarchy
 ```
 
 ### Hooks
 
 ```typescript
-evalRead(ctx, organizationId)     // Before read (throw to deny)
-evalWrite(ctx, doc)               // Before write (throw to deny)
-evalRemove(ctx, id)               // Before remove (throw to deny)
-onInsert(ctx, doc)                // After insert
-onUpdate(ctx, doc, prev)          // After update
-onRemove(ctx, id)                 // After remove
-onComplete(ctx, evaluation)       // After evaluation completes (evaluations only)
-transform(docs)                   // Transform results before returning
+evalRead(ctx, organizationId); // Before read (throw to deny)
+evalWrite(ctx, doc); // Before write (throw to deny)
+evalRemove(ctx, id); // Before remove (throw to deny)
+onInsert(ctx, doc); // After insert
+onUpdate(ctx, doc, prev); // After update
+onRemove(ctx, id); // After remove
+onComplete(ctx, evaluation); // After evaluation completes (evaluations only)
+transform(docs); // Transform results before returning
 ```
 
 ### Client (`@trestleinc/bridge/client`)
 
 ```typescript
-NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError
-getLogger()           // LogTape logger
+(NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError);
+getLogger(); // LogTape logger
 ```
 
 ### Type Safety
 
 ```typescript
-CardId, ProcedureId, DeliverableId, EvaluationId, OrganizationId  // Branded ID types
-Duration              // Template literal type: "30s", "5m", "2h", "7d"
-parseDuration(d)      // Parse Duration to milliseconds
-formatDuration(ms)    // Format milliseconds to Duration
-createId.card(s)      // Create typed IDs
+(CardId, ProcedureId, DeliverableId, EvaluationId, OrganizationId); // Branded ID types
+Duration; // Template literal type: "30s", "5m", "2h", "7d"
+parseDuration(d); // Parse Duration to milliseconds
+formatDuration(ms); // Format milliseconds to Duration
+createId.card(s); // Create typed IDs
 ```
 
 ## Critical Rules (from CLAUDE.md)

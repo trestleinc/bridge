@@ -91,55 +91,68 @@ Card definitions -> Procedures collect data -> Deliverables trigger -> Evaluatio
 
 ```typescript
 // Error types
-NetworkError
-AuthorizationError
-NotFoundError
-ValidationError
-NonRetriableError
+NetworkError;
+AuthorizationError;
+NotFoundError;
+ValidationError;
+NonRetriableError;
 
 // Logger
-getLogger()
+getLogger();
 ```
 
 ### Server (`@trestleinc/bridge/server`)
 
 ```typescript
-bridge()              // Factory to create bridge instance bound to component
+bridge(); // Factory to create bridge instance bound to component
 ```
 
 ### Shared (`@trestleinc/bridge`)
 
 ```typescript
 // Types
-Card, CardInput
-Procedure, ProcedureInput, ProcedureUpdate
-Deliverable, DeliverableInput, DeliverableUpdate
-Evaluation, EvaluationContext, EvaluationResult
+(Card, CardInput);
+(Procedure, ProcedureInput, ProcedureUpdate);
+(Deliverable, DeliverableInput, DeliverableUpdate);
+(Evaluation, EvaluationContext, EvaluationResult);
 
 // Validators
-cardTypeValidator, securityLevelValidator, subjectTypeValidator
-procedureTypeValidator, operationValidator
-evaluationStatusValidator, deliverableStatusValidator
+(cardTypeValidator, securityLevelValidator, subjectTypeValidator);
+(procedureTypeValidator, operationValidator);
+(evaluationStatusValidator, deliverableStatusValidator);
 ```
 
 ### Resource API (via bridge instance)
 
 ```typescript
-b.cards.get, b.cards.find, b.cards.list, b.cards.create
-b.procedures.get, b.procedures.list, b.procedures.create, b.procedures.update, b.procedures.remove, b.procedures.submit
-b.deliverables.get, b.deliverables.list, b.deliverables.create, b.deliverables.update, b.deliverables.evaluate
-b.evaluations.get, b.evaluations.list, b.evaluations.start, b.evaluations.cancel, b.evaluations.complete
+(b.cards.get, b.cards.find, b.cards.list, b.cards.create);
+(b.procedures.get,
+	b.procedures.list,
+	b.procedures.create,
+	b.procedures.update,
+	b.procedures.remove,
+	b.procedures.submit);
+(b.deliverables.get,
+	b.deliverables.list,
+	b.deliverables.create,
+	b.deliverables.update,
+	b.deliverables.evaluate);
+(b.evaluations.get,
+	b.evaluations.list,
+	b.evaluations.start,
+	b.evaluations.cancel,
+	b.evaluations.complete);
 ```
 
 ### Bridge Methods
 
 ```typescript
-b.submit(ctx, submission)           // Validate card values through procedure
-b.evaluate(ctx, trigger)            // Check and trigger deliverables (auto-resolves if subjects bound)
-b.resolve(ctx, type, id)            // Resolve subject data from bound table
-b.execute(deliverable, op, ctx)     // Run registered callback handler
-b.register(type, handler)           // Register callback handler
-b.aggregate(ctx, input)             // Aggregate context from subject hierarchy
+b.submit(ctx, submission); // Validate card values through procedure
+b.evaluate(ctx, trigger); // Check and trigger deliverables (auto-resolves if subjects bound)
+b.resolve(ctx, type, id); // Resolve subject data from bound table
+b.execute(deliverable, op, ctx); // Run registered callback handler
+b.register(type, handler); // Register callback handler
+b.aggregate(ctx, input); // Aggregate context from subject hierarchy
 ```
 
 ## Key Patterns
@@ -148,33 +161,51 @@ b.aggregate(ctx, input)             // Aggregate context from subject hierarchy
 
 ```typescript
 // convex/bridge.ts (create once)
-import { bridge } from '@trestleinc/bridge/server';
-import { components } from './_generated/api';
+import { bridge } from "@trestleinc/bridge/server";
+import { components } from "./_generated/api";
 
 export const b = bridge(components.bridge)({
-  // Bind subject types to host tables for auto-resolution
-  subjects: {
-    beneficiary: 'beneficiaries',
-    event: 'events',
-    eventInstance: 'eventInstances',
-  },
-  // Per-resource hooks
-  cards: {
-    hooks: {
-      evalRead: async (ctx, organizationId) => { /* auth check */ },
-      evalWrite: async (ctx, doc) => { /* auth check */ },
-      onInsert: async (ctx, doc) => { /* side effect */ },
-    },
-  },
-  procedures: {
-    hooks: { evalWrite: async (ctx, doc) => { /* auth check */ } },
-  },
-  deliverables: {
-    hooks: { evalRead: async (ctx, organizationId) => { /* auth check */ } },
-  },
-  evaluations: {
-    hooks: { onComplete: async (ctx, evaluation) => { /* react to completion */ } },
-  },
+	// Bind subject types to host tables for auto-resolution
+	subjects: {
+		beneficiary: "beneficiaries",
+		event: "events",
+		eventInstance: "eventInstances",
+	},
+	// Per-resource hooks
+	cards: {
+		hooks: {
+			evalRead: async (ctx, organizationId) => {
+				/* auth check */
+			},
+			evalWrite: async (ctx, doc) => {
+				/* auth check */
+			},
+			onInsert: async (ctx, doc) => {
+				/* side effect */
+			},
+		},
+	},
+	procedures: {
+		hooks: {
+			evalWrite: async (ctx, doc) => {
+				/* auth check */
+			},
+		},
+	},
+	deliverables: {
+		hooks: {
+			evalRead: async (ctx, organizationId) => {
+				/* auth check */
+			},
+		},
+	},
+	evaluations: {
+		hooks: {
+			onComplete: async (ctx, evaluation) => {
+				/* react to completion */
+			},
+		},
+	},
 });
 ```
 
@@ -182,7 +213,7 @@ export const b = bridge(components.bridge)({
 
 ```typescript
 // convex/cards.ts
-import { b } from './bridge';
+import { b } from "./bridge";
 
 // Export bridge resources directly as Convex functions
 export const get = b.cards.get;

@@ -23,8 +23,8 @@ bun add @trestleinc/bridge
 
 ```typescript
 // convex/convex.config.ts
-import { defineApp } from 'convex/server';
-import bridge from '@trestleinc/bridge/convex.config';
+import { defineApp } from "convex/server";
+import bridge from "@trestleinc/bridge/convex.config";
 
 const app = defineApp();
 app.use(bridge);
@@ -36,20 +36,24 @@ export default app;
 
 ```typescript
 // convex/bridge.ts
-import { bridge } from '@trestleinc/bridge/server';
-import { components } from './_generated/api';
+import { bridge } from "@trestleinc/bridge/server";
+import { components } from "./_generated/api";
 
 export const b = bridge(components.bridge)({
-  // Bind subject types to your host tables for automatic context resolution
-  subjects: {
-    beneficiary: 'beneficiaries',
-    event: 'events',
-    eventInstance: 'eventInstances',
-  },
-  hooks: {
-    read: async (ctx, orgId) => { /* auth check */ },
-    write: async (ctx, orgId) => { /* auth check */ },
-  },
+	// Bind subject types to your host tables for automatic context resolution
+	subjects: {
+		beneficiary: "beneficiaries",
+		event: "events",
+		eventInstance: "eventInstances",
+	},
+	hooks: {
+		read: async (ctx, orgId) => {
+			/* auth check */
+		},
+		write: async (ctx, orgId) => {
+			/* auth check */
+		},
+	},
 });
 ```
 
@@ -57,7 +61,7 @@ export const b = bridge(components.bridge)({
 
 ```typescript
 // convex/cards.ts
-import { b } from './bridge';
+import { b } from "./bridge";
 
 // Export bridge resources directly as Convex functions
 export const get = b.cards.get;
@@ -122,15 +126,15 @@ Execution records for triggered deliverables.
 
 ```typescript
 interface Card {
-  id: string;
-  organizationId: string;
-  slug: string;
-  label: string;
-  variant: Variant;         // 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | ...
-  security: Security;       // 'PUBLIC' | 'CONFIDENTIAL' | 'RESTRICTED'
-  subject: string;
-  createdBy: string;
-  createdAt: number;
+	id: string;
+	organizationId: string;
+	slug: string;
+	label: string;
+	variant: Variant; // 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | ...
+	security: Security; // 'PUBLIC' | 'CONFIDENTIAL' | 'RESTRICTED'
+	subject: string;
+	createdBy: string;
+	createdAt: number;
 }
 ```
 
@@ -138,18 +142,18 @@ interface Card {
 
 ```typescript
 interface Procedure {
-  id: string;
-  organizationId: string;
-  name: string;
-  description?: string;
-  source: Source;           // 'form' | 'import' | 'api'
-  subject?: {
-    type: string;
-    operation: Operation;   // 'create' | 'update' | 'delete'
-  };
-  cards: ProcedureCard[];   // Cards to collect with field mappings
-  createdAt: number;
-  updatedAt: number;
+	id: string;
+	organizationId: string;
+	name: string;
+	description?: string;
+	source: Source; // 'form' | 'import' | 'api'
+	subject?: {
+		type: string;
+		operation: Operation; // 'create' | 'update' | 'delete'
+	};
+	cards: ProcedureCard[]; // Cards to collect with field mappings
+	createdAt: number;
+	updatedAt: number;
 }
 ```
 
@@ -157,16 +161,16 @@ interface Procedure {
 
 ```typescript
 interface Deliverable {
-  id: string;
-  organizationId: string;
-  name: string;
-  description?: string;
-  subject: string;
-  operations: DeliverableOperations;
-  schedule?: Schedule;
-  status: DeliverableStatus; // 'active' | 'paused'
-  createdAt: number;
-  updatedAt: number;
+	id: string;
+	organizationId: string;
+	name: string;
+	description?: string;
+	subject: string;
+	operations: DeliverableOperations;
+	schedule?: Schedule;
+	status: DeliverableStatus; // 'active' | 'paused'
+	createdAt: number;
+	updatedAt: number;
 }
 ```
 
@@ -174,17 +178,17 @@ interface Deliverable {
 
 ```typescript
 interface Evaluation {
-  id: string;
-  deliverableId: string;
-  organizationId: string;
-  operation: Operation;
-  context: EvaluationContext;
-  variables: Record<string, unknown>;
-  status: EvaluationStatus; // 'pending' | 'running' | 'completed' | 'failed'
-  scheduledFor?: number;
-  result?: EvaluationResult;
-  createdAt: number;
-  completedAt?: number;
+	id: string;
+	deliverableId: string;
+	organizationId: string;
+	operation: Operation;
+	context: EvaluationContext;
+	variables: Record<string, unknown>;
+	status: EvaluationStatus; // 'pending' | 'running' | 'completed' | 'failed'
+	scheduledFor?: number;
+	result?: EvaluationResult;
+	createdAt: number;
+	completedAt?: number;
 }
 ```
 
@@ -198,15 +202,15 @@ Validate and submit card values through a procedure:
 
 ```typescript
 const result = await b.submit(ctx, {
-  procedureId: 'proc_123',
-  organizationId: 'org_456',
-  subject: 'beneficiary',
-  subjectId: 'ben_789',
-  values: { firstName: 'John', lastName: 'Doe' },
+	procedureId: "proc_123",
+	organizationId: "org_456",
+	subject: "beneficiary",
+	subjectId: "ben_789",
+	values: { firstName: "John", lastName: "Doe" },
 });
 
 if (result.success) {
-  // Write validated values to your tables
+	// Write validated values to your tables
 }
 ```
 
@@ -217,16 +221,16 @@ Trigger deliverable evaluation for a subject. If subjects are bound, variables a
 ```typescript
 // With auto-resolution (subjects bound) - no variables needed!
 const readiness = await b.evaluate(ctx, {
-  organizationId: 'org_456',
-  subject: 'beneficiary',
-  subjectId: 'ben_789',
-  operation: 'create',
+	organizationId: "org_456",
+	subject: "beneficiary",
+	subjectId: "ben_789",
+	operation: "create",
 });
 
 for (const r of readiness) {
-  if (r.ready) {
-    console.log(`Deliverable ${r.deliverableId} triggered, evaluation ${r.evaluationId}`);
-  }
+	if (r.ready) {
+		console.log(`Deliverable ${r.deliverableId} triggered, evaluation ${r.evaluationId}`);
+	}
 }
 ```
 
@@ -235,7 +239,7 @@ for (const r of readiness) {
 Manually resolve subject data from a bound host table:
 
 ```typescript
-const variables = await b.resolve(ctx, 'beneficiary', 'ben_789');
+const variables = await b.resolve(ctx, "beneficiary", "ben_789");
 // { firstName: 'John', lastName: 'Doe', email: 'john@example.com' }
 ```
 
@@ -245,16 +249,16 @@ Register callback handlers and execute deliverables:
 
 ```typescript
 // Register handlers at module level
-b.register('automation', async (deliverable, context) => {
-  // Execute automation logic
-  return { success: true, data: { sent: true } };
+b.register("automation", async (deliverable, context) => {
+	// Execute automation logic
+	return { success: true, data: { sent: true } };
 });
 
 // Execute in an action
-const result = await b.execute(deliverable, 'create', {
-  subject: 'beneficiary',
-  subjectId: 'ben_789',
-  variables: { firstName: 'John' },
+const result = await b.execute(deliverable, "create", {
+	subject: "beneficiary",
+	subjectId: "ben_789",
+	variables: { firstName: "John" },
 });
 ```
 
@@ -264,11 +268,11 @@ Bind subject types to your host tables for automatic context resolution:
 
 ```typescript
 const b = bridge(components.bridge)({
-  subjects: {
-    beneficiary: 'beneficiaries',  // Your beneficiaries table
-    event: 'events',               // Your events table
-    eventInstance: 'eventInstances',
-  },
+	subjects: {
+		beneficiary: "beneficiaries", // Your beneficiaries table
+		event: "events", // Your events table
+		eventInstance: "eventInstances",
+	},
 });
 ```
 
