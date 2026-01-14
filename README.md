@@ -40,35 +40,49 @@ import { bridge } from "@trestleinc/bridge/server";
 import { components } from "./_generated/api";
 
 export const b = bridge(components.bridge)({
-  // Bind subject types to your host tables for automatic context resolution
-  subjects: {
-    beneficiary: "beneficiaries",
-    event: "events",
-    eventInstance: "eventInstances",
-  },
-  cards: {
-    hooks: {
-      evalRead: async (ctx, orgId) => { /* auth check */ },
-      evalWrite: async (ctx, doc) => { /* auth check */ },
-    },
-  },
-  procedures: {
-    hooks: {
-      evalRead: async (ctx, orgId) => { /* auth check */ },
-      evalWrite: async (ctx, doc) => { /* auth check */ },
-    },
-  },
-  deliverables: {
-    hooks: {
-      evalRead: async (ctx, orgId) => { /* auth check */ },
-      evalWrite: async (ctx, doc) => { /* auth check */ },
-    },
-  },
-  evaluations: {
-    hooks: {
-      onComplete: async (ctx, evaluation) => { /* react to completion */ },
-    },
-  },
+	// Bind subject types to your host tables for automatic context resolution
+	subjects: {
+		beneficiary: "beneficiaries",
+		event: "events",
+		eventInstance: "eventInstances",
+	},
+	cards: {
+		hooks: {
+			evalRead: async (ctx, orgId) => {
+				/* auth check */
+			},
+			evalWrite: async (ctx, doc) => {
+				/* auth check */
+			},
+		},
+	},
+	procedures: {
+		hooks: {
+			evalRead: async (ctx, orgId) => {
+				/* auth check */
+			},
+			evalWrite: async (ctx, doc) => {
+				/* auth check */
+			},
+		},
+	},
+	deliverables: {
+		hooks: {
+			evalRead: async (ctx, orgId) => {
+				/* auth check */
+			},
+			evalWrite: async (ctx, doc) => {
+				/* auth check */
+			},
+		},
+	},
+	evaluations: {
+		hooks: {
+			onComplete: async (ctx, evaluation) => {
+				/* react to completion */
+			},
+		},
+	},
 });
 ```
 
@@ -141,15 +155,15 @@ Execution records for triggered deliverables.
 
 ```typescript
 interface Card {
-  id: string;
-  organizationId: string;
-  slug: string;
-  label: string;
-  cardType: CardType; // 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'EMAIL' | 'URL' | 'PHONE' | 'SSN' | 'ADDRESS' | 'SUBJECT' | 'ARRAY'
-  securityLevel: SecurityLevel; // 'PUBLIC' | 'CONFIDENTIAL' | 'RESTRICTED'
-  subject: string;
-  createdBy: string;
-  createdAt: number;
+	id: string;
+	organizationId: string;
+	slug: string;
+	label: string;
+	cardType: CardType; // 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'EMAIL' | 'URL' | 'PHONE' | 'SSN' | 'ADDRESS' | 'SUBJECT' | 'ARRAY'
+	securityLevel: SecurityLevel; // 'PUBLIC' | 'CONFIDENTIAL' | 'RESTRICTED'
+	subject: string;
+	createdBy: string;
+	createdAt: number;
 }
 ```
 
@@ -157,18 +171,18 @@ interface Card {
 
 ```typescript
 interface Procedure {
-  id: string;
-  organizationId: string;
-  name: string;
-  description?: string;
-  procedureType: ProcedureType; // 'form' | 'import' | 'api'
-  subject?: {
-    type: string;
-    operation: Operation; // 'create' | 'update' | 'delete'
-  };
-  cards: ProcedureCard[]; // Cards to collect with field mappings
-  createdAt: number;
-  updatedAt: number;
+	id: string;
+	organizationId: string;
+	name: string;
+	description?: string;
+	procedureType: ProcedureType; // 'form' | 'import' | 'api'
+	subject?: {
+		type: string;
+		operation: Operation; // 'create' | 'update' | 'delete'
+	};
+	cards: ProcedureCard[]; // Cards to collect with field mappings
+	createdAt: number;
+	updatedAt: number;
 }
 ```
 
@@ -176,16 +190,16 @@ interface Procedure {
 
 ```typescript
 interface Deliverable {
-  id: string;
-  organizationId: string;
-  name: string;
-  description?: string;
-  subject: string;
-  operations: DeliverableOperations;
-  schedule?: Schedule;
-  status: DeliverableStatus; // 'active' | 'paused'
-  createdAt: number;
-  updatedAt: number;
+	id: string;
+	organizationId: string;
+	name: string;
+	description?: string;
+	subject: string;
+	operations: DeliverableOperations;
+	schedule?: Schedule;
+	status: DeliverableStatus; // 'active' | 'paused'
+	createdAt: number;
+	updatedAt: number;
 }
 ```
 
@@ -193,17 +207,17 @@ interface Deliverable {
 
 ```typescript
 interface Evaluation {
-  id: string;
-  deliverableId: string;
-  organizationId: string;
-  operation: Operation;
-  context: EvaluationContext;
-  variables: Record<string, unknown>;
-  status: EvaluationStatus; // 'pending' | 'running' | 'completed' | 'failed'
-  scheduledFor?: number;
-  result?: EvaluationResult;
-  createdAt: number;
-  completedAt?: number;
+	id: string;
+	deliverableId: string;
+	organizationId: string;
+	operation: Operation;
+	context: EvaluationContext;
+	variables: Record<string, unknown>;
+	status: EvaluationStatus; // 'pending' | 'running' | 'completed' | 'failed'
+	scheduledFor?: number;
+	result?: EvaluationResult;
+	createdAt: number;
+	completedAt?: number;
 }
 ```
 
@@ -217,15 +231,15 @@ Validate and submit card values through a procedure:
 
 ```typescript
 const result = await b.submit(ctx, {
-  procedureId: "proc_123",
-  organizationId: "org_456",
-  subject: "beneficiary",
-  subjectId: "ben_789",
-  values: { firstName: "John", lastName: "Doe" },
+	procedureId: "proc_123",
+	organizationId: "org_456",
+	subject: "beneficiary",
+	subjectId: "ben_789",
+	values: { firstName: "John", lastName: "Doe" },
 });
 
 if (result.success) {
-  // Write validated values to your tables
+	// Write validated values to your tables
 }
 ```
 
@@ -236,16 +250,16 @@ Trigger deliverable evaluation for a subject. If subjects are bound, variables a
 ```typescript
 // With auto-resolution (subjects bound) - no variables needed!
 const readiness = await b.evaluate(ctx, {
-  organizationId: "org_456",
-  subject: "beneficiary",
-  subjectId: "ben_789",
-  operation: "create",
+	organizationId: "org_456",
+	subject: "beneficiary",
+	subjectId: "ben_789",
+	operation: "create",
 });
 
 for (const r of readiness) {
-  if (r.ready) {
-    console.log(`Deliverable ${r.deliverableId} triggered, evaluation ${r.evaluationId}`);
-  }
+	if (r.ready) {
+		console.log(`Deliverable ${r.deliverableId} triggered, evaluation ${r.evaluationId}`);
+	}
 }
 ```
 
@@ -265,15 +279,15 @@ Register callback handlers and execute deliverables:
 ```typescript
 // Register handlers at module level
 b.register("automation", async (deliverable, context) => {
-  // Execute automation logic
-  return { success: true, data: { sent: true } };
+	// Execute automation logic
+	return { success: true, data: { sent: true } };
 });
 
 // Execute in an action
 const result = await b.execute(deliverable, "create", {
-  subject: "beneficiary",
-  subjectId: "ben_789",
-  variables: { firstName: "John" },
+	subject: "beneficiary",
+	subjectId: "ben_789",
+	variables: { firstName: "John" },
 });
 ```
 
@@ -283,8 +297,8 @@ Aggregate context from subject hierarchy:
 
 ```typescript
 const aggregated = await b.aggregate(ctx, {
-  subject: "eventInstance",
-  subjectId: "ei_123",
+	subject: "eventInstance",
+	subjectId: "ei_123",
 });
 // Returns variables from eventInstance + parent event + associated beneficiary
 ```
@@ -295,11 +309,11 @@ Bind subject types to your host tables for automatic context resolution:
 
 ```typescript
 const b = bridge(components.bridge)({
-  subjects: {
-    beneficiary: "beneficiaries", // Your beneficiaries table
-    event: "events", // Your events table
-    eventInstance: "eventInstances",
-  },
+	subjects: {
+		beneficiary: "beneficiaries", // Your beneficiaries table
+		event: "events", // Your events table
+		eventInstance: "eventInstances",
+	},
 });
 ```
 
@@ -362,46 +376,46 @@ All validators and types are consolidated in a single source of truth:
 
 ```typescript
 import {
-  // Enums with display names
-  CardType,
-  SecurityLevel,
-  ProcedureType,
-  Operation,
-  EvaluationStatus,
-  DeliverableStatus,
+	// Enums with display names
+	CardType,
+	SecurityLevel,
+	ProcedureType,
+	Operation,
+	EvaluationStatus,
+	DeliverableStatus,
 
-  // Validators
-  cardTypeValidator,
-  securityLevelValidator,
-  procedureTypeValidator,
-  operationValidator,
-  evaluationStatusValidator,
-  deliverableStatusValidator,
+	// Validators
+	cardTypeValidator,
+	securityLevelValidator,
+	procedureTypeValidator,
+	operationValidator,
+	evaluationStatusValidator,
+	deliverableStatusValidator,
 
-  // Types (derived from validators)
-  type Card,
-  type Procedure,
-  type Deliverable,
-  type Evaluation,
-  type ProcedureCard,
-  type DeliverableOperation,
-  type EvaluationContext,
-  type EvaluationResult,
+	// Types (derived from validators)
+	type Card,
+	type Procedure,
+	type Deliverable,
+	type Evaluation,
+	type ProcedureCard,
+	type DeliverableOperation,
+	type EvaluationContext,
+	type EvaluationResult,
 
-  // Branded IDs
-  type CardId,
-  type ProcedureId,
-  type DeliverableId,
-  type EvaluationId,
-  type OrganizationId,
+	// Branded IDs
+	type CardId,
+	type ProcedureId,
+	type DeliverableId,
+	type EvaluationId,
+	type OrganizationId,
 
-  // ID factory
-  createId,
+	// ID factory
+	createId,
 
-  // Duration utilities
-  type Duration, // "30s" | "5m" | "2h" | "7d"
-  parseDuration,
-  formatDuration,
+	// Duration utilities
+	type Duration, // "30s" | "5m" | "2h" | "7d"
+	parseDuration,
+	formatDuration,
 } from "@trestleinc/bridge";
 ```
 
@@ -409,18 +423,18 @@ import {
 
 ```typescript
 import {
-  bridge, // Factory to create bridge instance
-  clientApi, // Alternative API factory
-  createTriggers, // Generate Convex trigger handlers
-  createSubjectTrigger, // Single trigger handler
-  extractAttributeChanges, // Detect changed attributes
+	bridge, // Factory to create bridge instance
+	clientApi, // Alternative API factory
+	createTriggers, // Generate Convex trigger handlers
+	createSubjectTrigger, // Single trigger handler
+	extractAttributeChanges, // Detect changed attributes
 
-  // Error types
-  BridgeError,
-  NotFoundError,
-  ValidationError,
-  AuthorizationError,
-  ConflictError,
+	// Error types
+	BridgeError,
+	NotFoundError,
+	ValidationError,
+	AuthorizationError,
+	ConflictError,
 } from "@trestleinc/bridge/server";
 ```
 
@@ -428,16 +442,105 @@ import {
 
 ```typescript
 import {
-  // Error types
-  NetworkError,
-  AuthorizationError,
-  NotFoundError,
-  ValidationError,
-  NonRetriableError,
+	// Error types
+	NetworkError,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+	NonRetriableError,
 
-  // Logger
-  getLogger,
+	// Logger
+	getLogger,
 } from "@trestleinc/bridge/client";
+```
+
+## Project Structure
+
+```
+src/
+├── shared/
+│   └── index.ts         # All validators, types, branded IDs, enums, utilities
+├── client/
+│   └── index.ts         # Error types, logger
+├── server/
+│   ├── index.ts         # Factory function, triggers, error types
+│   └── resources/       # Resource implementations (cards, procedures, etc.)
+└── component/
+    └── ...              # Convex component internals
+```
+
+### Getter / Factory / Namespace Pattern
+
+Bridge follows a consistent API design pattern across all entry points:
+
+**1. Factory Pattern** - Create configured instances with hooks:
+
+```typescript
+import { bridge } from "@trestleinc/bridge/server";
+
+// Factory creates a configured bridge instance
+const b = bridge(components.bridge)({
+	subjects: { beneficiary: "beneficiaries", event: "events" },
+	cards: {
+		hooks: {
+			evalRead: async (ctx, orgId) => {
+				/* auth */
+			},
+		},
+	},
+	procedures: {
+		hooks: {
+			onInsert: async (ctx, doc) => {
+				/* react */
+			},
+		},
+	},
+});
+```
+
+**2. Namespace Pattern** - Organized resource access:
+
+```typescript
+// Resources are organized under namespaces
+b.cards.get; // Get a card
+b.cards.list; // List cards
+b.procedures.create; // Create a procedure
+b.deliverables.evaluate; // Evaluate deliverables
+b.evaluations.complete; // Complete an evaluation
+```
+
+**3. Getter Pattern** - Direct property access for resource methods:
+
+```typescript
+// Each method returns a Convex function reference
+export const get = b.cards.get; // Re-export as Convex query
+export const list = b.cards.list; // Re-export as Convex query
+export const create = b.cards.create; // Re-export as Convex mutation
+```
+
+**4. Single Entry Point** - All exports consolidated per layer:
+
+```typescript
+// Server - everything from one import
+import { bridge, BridgeError, NotFoundError, createTriggers } from "@trestleinc/bridge/server";
+
+// Client - everything from one import
+import { NetworkError, ValidationError, getLogger } from "@trestleinc/bridge/client";
+
+// Shared - all validators and types from one import (default export)
+import {
+	Card,
+	Procedure,
+	Deliverable,
+	Evaluation,
+	CardType,
+	SecurityLevel,
+	ProcedureType,
+	cardDocValidator,
+	procedureDocValidator,
+	createId,
+	parseDuration,
+} from "@trestleinc/bridge";
 ```
 
 ## Technology Stack

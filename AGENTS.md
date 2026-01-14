@@ -81,55 +81,68 @@ ConflictError                           // Conflict error
 
 ```typescript
 // Resources (directly on instance)
-b.cards.get, b.cards.find, b.cards.list, b.cards.create
-b.procedures.get, b.procedures.list, b.procedures.create, b.procedures.update, b.procedures.remove, b.procedures.submit
-b.deliverables.get, b.deliverables.list, b.deliverables.create, b.deliverables.update, b.deliverables.evaluate
-b.evaluations.get, b.evaluations.list, b.evaluations.start, b.evaluations.cancel, b.evaluations.complete
+(b.cards.get, b.cards.find, b.cards.list, b.cards.create);
+(b.procedures.get,
+	b.procedures.list,
+	b.procedures.create,
+	b.procedures.update,
+	b.procedures.remove,
+	b.procedures.submit);
+(b.deliverables.get,
+	b.deliverables.list,
+	b.deliverables.create,
+	b.deliverables.update,
+	b.deliverables.evaluate);
+(b.evaluations.get,
+	b.evaluations.list,
+	b.evaluations.start,
+	b.evaluations.cancel,
+	b.evaluations.complete);
 
 // Bridge methods
-b.submit(ctx, submission)       // Validate card values through procedure
-b.evaluate(ctx, trigger)        // Check and trigger deliverables (auto-resolves if subjects bound)
-b.resolve(ctx, type, id)        // Resolve subject data from bound table
-b.register(type, handler)       // Register callback handler
-b.execute(deliverable, op, ctx) // Run registered callback
-b.aggregate(ctx, input)         // Aggregate context from subject hierarchy
+b.submit(ctx, submission); // Validate card values through procedure
+b.evaluate(ctx, trigger); // Check and trigger deliverables (auto-resolves if subjects bound)
+b.resolve(ctx, type, id); // Resolve subject data from bound table
+b.register(type, handler); // Register callback handler
+b.execute(deliverable, op, ctx); // Run registered callback
+b.aggregate(ctx, input); // Aggregate context from subject hierarchy
 ```
 
 ### Client (`@trestleinc/bridge/client`)
 
 ```typescript
 // Error types
-NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError
+(NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError);
 
 // Logger
-getLogger()
+getLogger();
 ```
 
 ### Shared (`@trestleinc/bridge`)
 
 ```typescript
 // Enums
-CardType, SecurityLevel, ProcedureType, Operation, EvaluationStatus, DeliverableStatus
+(CardType, SecurityLevel, ProcedureType, Operation, EvaluationStatus, DeliverableStatus);
 
 // Validators
-cardTypeValidator, securityLevelValidator, procedureTypeValidator
-operationValidator, evaluationStatusValidator, deliverableStatusValidator
+(cardTypeValidator, securityLevelValidator, procedureTypeValidator);
+(operationValidator, evaluationStatusValidator, deliverableStatusValidator);
 
 // Types
-Card, Procedure, Deliverable, Evaluation
-ProcedureCard, DeliverableOperation, EvaluationContext, EvaluationResult
+(Card, Procedure, Deliverable, Evaluation);
+(ProcedureCard, DeliverableOperation, EvaluationContext, EvaluationResult);
 
 // Branded IDs
-CardId, ProcedureId, DeliverableId, EvaluationId, OrganizationId
-createId.card(), createId.procedure(), createId.deliverable(), createId.evaluation()
+(CardId, ProcedureId, DeliverableId, EvaluationId, OrganizationId);
+(createId.card(), createId.procedure(), createId.deliverable(), createId.evaluation());
 
 // Duration utilities
-Duration, parseDuration, formatDuration
+(Duration, parseDuration, formatDuration);
 ```
 
 ## Hooks Reference
 
-### Authorization Hooks (eval*)
+### Authorization Hooks (eval\*)
 
 Run BEFORE operation. Throw to deny access.
 
@@ -139,7 +152,7 @@ evalWrite: (ctx, doc) => void | Promise<void>             // Before writes
 evalRemove: (ctx, doc) => void | Promise<void>            // Before deletes (receives full doc)
 ```
 
-### Side Effect Hooks (on*)
+### Side Effect Hooks (on\*)
 
 Run AFTER operation for logging, notifications.
 
@@ -157,15 +170,16 @@ Bind subject types to host tables for automatic context resolution:
 
 ```typescript
 const b = bridge(components.bridge)({
-  subjects: {
-    beneficiary: "beneficiaries",
-    event: "events",
-    eventInstance: "eventInstances",
-  },
+	subjects: {
+		beneficiary: "beneficiaries",
+		event: "events",
+		eventInstance: "eventInstances",
+	},
 });
 ```
 
 Host tables must have:
+
 - `id` field (UUID string)
 - `attributes` array with `{ slug, value }` objects
 - `by_uuid` index on `id` field

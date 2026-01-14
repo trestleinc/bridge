@@ -11,6 +11,7 @@ import {
 	deliverableStatusValidator,
 	evaluateResultValidator,
 	evaluationDocValidator,
+	evaluationStatusValidator,
 	idResultValidator,
 	operationValidator,
 	operationsValidator,
@@ -25,7 +26,7 @@ import {
 	startedResultValidator,
 	submitResultValidator,
 	type CardTypeValue,
-} from "$/shared/validators";
+} from "$/shared";
 
 const _cardGet = query({
 	args: { id: v.string() },
@@ -593,7 +594,7 @@ const _evaluationList = query({
 	args: {
 		organizationId: v.string(),
 		deliverableId: v.optional(v.string()),
-		status: v.optional(v.string()),
+		status: v.optional(evaluationStatusValidator),
 		limit: v.optional(v.number()),
 	},
 	returns: v.array(evaluationDocValidator),

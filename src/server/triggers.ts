@@ -8,8 +8,8 @@
  */
 
 import type { GenericDataModel, GenericMutationCtx } from "convex/server";
-import type { BridgeComponentApi } from "./bridge";
-import type { SubjectConfig } from "$/shared/validators";
+import type { BridgeComponentApi } from "$/server";
+import type { SubjectConfig } from "$/shared";
 
 // ============================================================================
 // Types
@@ -133,7 +133,7 @@ export function createSubjectTrigger<D extends GenericDataModel = GenericDataMod
 ): TriggerHandler<D> {
 	const { trackedFields = [] } = config;
 
-	return (async (ctx: GenericMutationCtx<GenericDataModel>, change: Change): Promise<void> => {
+	const handler = async (ctx: GenericMutationCtx<D>, change: Change): Promise<void> => {
 		// Skip delete operations - deliverables typically don't need to evaluate on delete
 		if (change.operation === "delete") {
 			return;
@@ -182,7 +182,9 @@ export function createSubjectTrigger<D extends GenericDataModel = GenericDataMod
 			operation,
 			mutated: changedFields,
 		});
-	}) as TriggerHandler<D>;
+	};
+
+	return handler;
 }
 
 // ============================================================================

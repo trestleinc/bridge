@@ -1,9 +1,9 @@
 import { mutationGeneric, queryGeneric } from "convex/server";
 import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server/bridge";
+import type { BridgeComponentApi } from "$/server";
 import { NotFoundError } from "$/server/errors";
-import type { AnyMutationCtx, AnyQueryCtx, EvaluationOptions } from "$/server/resource";
-import { evaluationDocValidator, resultValidator, type Evaluation } from "$/shared/validators";
+import type { AnyMutationCtx, AnyQueryCtx, EvaluationOptions } from "$/shared";
+import { evaluationDocValidator, resultValidator, type Evaluation } from "$/shared";
 
 export function createEvaluationResource(
 	component: BridgeComponentApi,

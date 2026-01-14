@@ -1,13 +1,8 @@
 import { mutationGeneric, queryGeneric } from "convex/server";
 import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server/bridge";
-import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from "$/server/resource";
-import {
-	cardDocValidator,
-	cardTypeValidator,
-	securityLevelValidator,
-	type Card,
-} from "$/shared/validators";
+import type { BridgeComponentApi } from "$/server";
+import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from "$/shared";
+import { cardDocValidator, cardTypeValidator, securityLevelValidator, type Card } from "$/shared";
 
 export function createCardResource(component: BridgeComponentApi, options?: ResourceOptions<Card>) {
 	const hooks = options?.hooks;

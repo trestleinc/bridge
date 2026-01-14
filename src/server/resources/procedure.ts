@@ -1,8 +1,8 @@
 import { mutationGeneric, queryGeneric } from "convex/server";
 import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server/bridge";
+import type { BridgeComponentApi } from "$/server";
 import { NotFoundError } from "$/server/errors";
-import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from "$/server/resource";
+import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from "$/shared";
 import {
 	operationValidator,
 	procedureCardValidator,
@@ -11,7 +11,7 @@ import {
 	submitResultValidator,
 	type Procedure,
 	type SubmissionResult,
-} from "$/shared/validators";
+} from "$/shared";
 
 export function createProcedureResource(
 	component: BridgeComponentApi,

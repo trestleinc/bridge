@@ -12,7 +12,7 @@ import {
 	resultValidator,
 	scheduleValidator,
 	securityLevelValidator,
-} from "$/shared/validators";
+} from "$/shared";
 
 export default defineSchema({
 	cards: defineTable({

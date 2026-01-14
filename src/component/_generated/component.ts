@@ -405,7 +405,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
 		evaluationList: FunctionReference<
 			"query",
 			"internal",
-			{ limit?: number; organizationId: string },
+			{
+				deliverableId?: string;
+				limit?: number;
+				organizationId: string;
+				status?: "pending" | "running" | "completed" | "failed";
+			},
 			Array<{
 				completedAt?: number;
 				context: {
