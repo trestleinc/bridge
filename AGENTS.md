@@ -53,21 +53,19 @@ src/
 
 ```typescript
 // Factory
-bridge(component)(options)              // Create bridge instance with hooks and subject bindings
+bridge.create(component, options)       // Create bridge instance
 
 // Options structure
 {
-  subjects: { beneficiary: "beneficiaries", event: "events" },
-  cards: { hooks: { evalRead, evalWrite, evalRemove, onInsert, onUpdate, onRemove, transform } },
-  procedures: { hooks: { ... } },
-  deliverables: { hooks: { ... } },
-  evaluations: { hooks: { ..., onComplete } },
+  subjects: {
+    beneficiary: { table: "beneficiaries" },
+    event: { table: "events" },
+    eventInstance: { table: "eventInstances", parents: [...] },
+  },
 }
 
 // Trigger utilities
-createTriggers(config)                  // Generate Convex trigger handlers
-createSubjectTrigger(subjectConfig)     // Single trigger handler
-extractAttributeChanges(op, old, new)   // Detect changed attributes
+createTriggers(component, subjects)     // Generate Convex trigger handlers
 
 // Error types
 BridgeError                             // Base error class with code property
@@ -140,28 +138,20 @@ getLogger();
 (Duration, parseDuration, formatDuration);
 ```
 
-## Hooks Reference
+## Authorization Pattern
 
-### Authorization Hooks (eval\*)
-
-Run BEFORE operation. Throw to deny access.
+Handle authorization in wrapper functions where you have properly typed context:
 
 ```typescript
-evalRead: (ctx, organizationId) => void | Promise<void>   // Before reads
-evalWrite: (ctx, doc) => void | Promise<void>             // Before writes
-evalRemove: (ctx, doc) => void | Promise<void>            // Before deletes (receives full doc)
-```
-
-### Side Effect Hooks (on\*)
-
-Run AFTER operation for logging, notifications.
-
-```typescript
-onInsert: (ctx, doc) => void | Promise<void>              // After insert
-onUpdate: (ctx, doc, prev) => void | Promise<void>        // After update
-onRemove: (ctx, doc) => void | Promise<void>              // After delete (receives full doc)
-onComplete: (ctx, evaluation) => void | Promise<void>     // After evaluation completes (evaluations only)
-transform: (docs) => T[] | Promise<T[]>                   // Transform results before returning
+// convex/procedures.ts
+export const procedureGet = query({
+	args: { id: v.string() },
+	handler: async (ctx, { id }) => {
+		const proc = await ctx.runQuery(components.bridge.public.procedureGet, { id });
+		if (proc) await verifyOrgAccess(ctx, proc.organizationId);
+		return proc;
+	},
+});
 ```
 
 ## Subject Bindings
@@ -169,20 +159,17 @@ transform: (docs) => T[] | Promise<T[]>                   // Transform results b
 Bind subject types to host tables for automatic context resolution:
 
 ```typescript
-const b = bridge(components.bridge)({
+const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: "beneficiaries",
-		event: "events",
-		eventInstance: "eventInstances",
+		beneficiary: { table: "beneficiaries" },
+		event: { table: "events" },
+		eventInstance: {
+			table: "eventInstances",
+			parents: [{ field: "eventId", subject: "event" }],
+		},
 	},
 });
 ```
-
-Host tables must have:
-
-- `id` field (UUID string)
-- `attributes` array with `{ slug, value }` objects
-- `by_uuid` index on `id` field
 
 ## Critical Rules (from CLAUDE.md)
 
@@ -191,7 +178,6 @@ Host tables must have:
 - Resource pattern: `b.cards.get`, `b.procedures.list`, `b.deliverables.evaluate`.
 - All data scoped by `organizationId`.
 - Subject bindings enable auto-resolution in `b.evaluate()`.
-- Hooks: eval* for auth (throw to deny), on* for side effects.
-- evalRemove and onRemove receive full document (not just ID).
+- **Authorization at wrapper level** - Component hooks receive generic ctx types.
 - Import validators and types from `$/shared/validators` (single source of truth).
 - Types derived from validators using `Infer<typeof validator>`.

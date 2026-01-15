@@ -92,37 +92,22 @@ flowchart LR
 ```typescript
 // Factory (Replicate-inspired pattern)
 import {
-  bridge,
-  AuthorizationError,
-  NotFoundError,
-  ValidationError,
-  ConflictError,
+	bridge,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+	ConflictError,
 } from "@trestleinc/bridge/server";
 
-const b = bridge(components.bridge)({
-  subjects: {
-    beneficiary: "beneficiaries",
-    event: "events",
-    eventInstance: "eventInstances",
-  },
-  cards: {
-    hooks: {
-      evalRead: async (ctx, orgId) => { /* auth check */ },
-      evalWrite: async (ctx, doc) => { /* auth check */ },
-      evalRemove: async (ctx, doc) => { /* receives full doc */ },
-      onInsert: async (ctx, doc) => { /* side effect */ },
-      onUpdate: async (ctx, doc, prev) => { /* side effect */ },
-      onRemove: async (ctx, doc) => { /* receives full doc */ },
-      transform: (docs) => docs,
-    },
-  },
-  procedures: { hooks: { ... } },
-  deliverables: { hooks: { ... } },
-  evaluations: {
-    hooks: {
-      onComplete: async (ctx, evaluation) => { /* react to completion */ },
-    },
-  },
+const b = bridge.create(components.bridge, {
+	subjects: {
+		beneficiary: { table: "beneficiaries" },
+		event: { table: "events" },
+		eventInstance: {
+			table: "eventInstances",
+			parents: [{ field: "eventId", subject: "event" }],
+		},
+	},
 });
 ```
 
@@ -212,31 +197,45 @@ formatDuration(ms); // Format milliseconds to Duration
 
 ## Key Patterns
 
-### Server: bridge Factory with Hooks
+### Server: bridge Factory
 
 ```typescript
 // convex/bridge.ts
-import { bridge, AuthorizationError } from "@trestleinc/bridge/server";
+import { bridge } from "@trestleinc/bridge/server";
 import { components } from "./_generated/api";
 
-export const b = bridge(components.bridge)({
+// Minimal configuration - authorization handled at wrapper level
+export const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: "beneficiaries",
-		event: "events",
-		eventInstance: "eventInstances",
-	},
-	cards: {
-		hooks: {
-			evalRead: async (ctx, organizationId) => {
-				const user = await getUser(ctx);
-				if (!user.canAccessOrg(organizationId)) {
-					throw new AuthorizationError("Access denied");
-				}
-			},
-			onInsert: async (ctx, doc) => {
-				await audit.log(ctx, "card.created", doc);
-			},
+		beneficiary: { table: "beneficiaries" },
+		event: { table: "events" },
+		eventInstance: {
+			table: "eventInstances",
+			parents: [{ field: "eventId", subject: "event" }],
 		},
+	},
+});
+```
+
+### Authorization Pattern (Wrapper Level)
+
+**Important**: Authorization hooks (`evalRead`, `evalWrite`, `evalRemove`) receive generic context types from the component that may not be compatible with your host app's schema. Instead, handle authorization in wrapper functions where you have properly typed context:
+
+```typescript
+// convex/procedures.ts - Authorization at wrapper level
+import { query, mutation } from "./_generated/server";
+import { components } from "./_generated/api";
+import { verifyOrgAccess } from "./permissions";
+
+export const procedureGet = query({
+	args: { id: v.string() },
+	handler: async (ctx, { id }) => {
+		const procedure = await ctx.runQuery(components.bridge.public.procedureGet, { id });
+		if (procedure) {
+			// Verify with properly typed context from your schema
+			await verifyOrgAccess(ctx, procedure.organizationId);
+		}
+		return procedure;
 	},
 });
 ```
@@ -287,13 +286,6 @@ import {
   ConflictError, // new ConflictError('message')
 } from "@trestleinc/bridge/server";
 
-// In hooks
-evalRemove: async (ctx, doc) => {
-  if (!canDelete(doc)) {
-    throw new AuthorizationError("Cannot delete this card");
-  }
-};
-
 // In handlers
 try {
   await ctx.runMutation(b.cards.create, { ... });
@@ -318,14 +310,13 @@ try {
 - **Public API**: `bridge()` factory, direct resource access `b.cards.*`, `b.procedures.*`
 - **Error classes**: Short names with "Error" suffix (`NotFoundError`, `ValidationError`)
 - **Types not classes**: Use `type` for inputs, results - NOT interfaces
-- **Hook naming**: `eval*` for auth, `on*` for side effects
 
 ## Important Notes
 
 - **bun for commands** - Use `bun run` for all commands
 - **Organization-scoped** - All data is scoped by `organizationId`
 - **Subject bindings** - Bind subjects to host tables for auto-resolution
-- **Hooks receive full docs** - `evalRemove` and `onRemove` receive full document
+- **Authorization at wrapper level** - Component hooks receive generic context types; use wrapper functions for auth
 - **LogTape logging** - Use LogTape from `$/shared/logger`, not console.\*
 - **Import types** - Use `import type` for type-only imports
 - **Single source of truth** - All validators and types in `$/shared/validators`

@@ -39,48 +39,15 @@ export default app;
 import { bridge } from "@trestleinc/bridge/server";
 import { components } from "./_generated/api";
 
-export const b = bridge(components.bridge)({
+// Minimal configuration - hooks are optional
+export const b = bridge.create(components.bridge, {
 	// Bind subject types to your host tables for automatic context resolution
 	subjects: {
-		beneficiary: "beneficiaries",
-		event: "events",
-		eventInstance: "eventInstances",
-	},
-	cards: {
-		hooks: {
-			evalRead: async (ctx, orgId) => {
-				/* auth check */
-			},
-			evalWrite: async (ctx, doc) => {
-				/* auth check */
-			},
-		},
-	},
-	procedures: {
-		hooks: {
-			evalRead: async (ctx, orgId) => {
-				/* auth check */
-			},
-			evalWrite: async (ctx, doc) => {
-				/* auth check */
-			},
-		},
-	},
-	deliverables: {
-		hooks: {
-			evalRead: async (ctx, orgId) => {
-				/* auth check */
-			},
-			evalWrite: async (ctx, doc) => {
-				/* auth check */
-			},
-		},
-	},
-	evaluations: {
-		hooks: {
-			onComplete: async (ctx, evaluation) => {
-				/* react to completion */
-			},
+		beneficiary: { table: "beneficiaries" },
+		event: { table: "events" },
+		eventInstance: {
+			table: "eventInstances",
+			parents: [{ field: "eventId", subject: "event" }],
 		},
 	},
 });
@@ -308,65 +275,42 @@ const aggregated = await b.aggregate(ctx, {
 Bind subject types to your host tables for automatic context resolution:
 
 ```typescript
-const b = bridge(components.bridge)({
+const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: "beneficiaries", // Your beneficiaries table
-		event: "events", // Your events table
-		eventInstance: "eventInstances",
+		beneficiary: { table: "beneficiaries" },
+		event: { table: "events" },
+		eventInstance: {
+			table: "eventInstances",
+			parents: [{ field: "eventId", subject: "event" }],
+		},
 	},
 });
 ```
 
-When subjects are bound, Bridge can automatically fetch subject data when evaluating deliverables. Your host tables must have:
+When subjects are bound, Bridge can automatically fetch subject data when evaluating deliverables.
 
-- An `id` field (UUID string)
-- An `attributes` array with `{ slug, value }` objects
-- A `by_uuid` index on the `id` field
+## Authorization Pattern
 
-## Hooks System
-
-Configure authorization and side effects per resource:
+**Important**: Component hooks receive generic context types that may not be compatible with your host app's schema. Handle authorization in wrapper functions where you have properly typed context:
 
 ```typescript
-const b = bridge(components.bridge)({
-  subjects: { ... },
-  cards: {
-    hooks: {
-      evalRead: async (ctx, organizationId) => { /* auth check */ },
-      evalWrite: async (ctx, doc) => { /* auth check */ },
-      evalRemove: async (ctx, doc) => { /* auth check */ },
-      onInsert: async (ctx, doc) => { /* side effect */ },
-      onUpdate: async (ctx, doc, prev) => { /* side effect */ },
-      onRemove: async (ctx, doc) => { /* side effect */ },
-      transform: (docs) => docs.map(d => ({ ...d, computed: true })),
-    },
-  },
-  procedures: {
-    hooks: { ... },
-  },
-  deliverables: {
-    hooks: { ... },
-  },
-  evaluations: {
-    hooks: {
-      onComplete: async (ctx, evaluation) => { /* react to completion */ },
-    },
-  },
+// convex/procedures.ts - Authorization at wrapper level
+import { query, mutation } from "./_generated/server";
+import { components } from "./_generated/api";
+import { verifyOrgAccess } from "./permissions";
+
+export const procedureGet = query({
+	args: { id: v.string() },
+	handler: async (ctx, { id }) => {
+		const procedure = await ctx.runQuery(components.bridge.public.procedureGet, { id });
+		if (procedure) {
+			// Verify with properly typed context from your schema
+			await verifyOrgAccess(ctx, procedure.organizationId);
+		}
+		return procedure;
+	},
 });
 ```
-
-### Hook Types
-
-| Hook         | Signature                       | When Called                        |
-| ------------ | ------------------------------- | ---------------------------------- |
-| `evalRead`   | `(ctx, organizationId) => void` | Before reads                       |
-| `evalWrite`  | `(ctx, doc) => void`            | Before writes                      |
-| `evalRemove` | `(ctx, doc) => void`            | Before removes (receives full doc) |
-| `onInsert`   | `(ctx, doc) => void`            | After insert                       |
-| `onUpdate`   | `(ctx, doc, prev) => void`      | After update                       |
-| `onRemove`   | `(ctx, doc) => void`            | After remove (receives full doc)   |
-| `onComplete` | `(ctx, evaluation) => void`     | After evaluation completes         |
-| `transform`  | `(docs) => docs`                | Before returning results           |
 
 ## Type Exports
 
@@ -488,42 +432,16 @@ src/
 
 Bridge follows a consistent API design pattern across all entry points:
 
-**1. Factory Pattern** - Create configured instances with hooks:
+**1. Factory Pattern** - Create configured instances:
 
 ```typescript
 import { bridge } from "@trestleinc/bridge/server";
 
 // Factory creates a configured bridge instance
-const b = bridge(components.bridge)({
-	subjects: { beneficiary: "beneficiaries", event: "events" },
-	cards: {
-		hooks: {
-			evalRead: async (ctx, orgId) => {
-				/* auth */
-			},
-		},
-	},
-	procedures: {
-		hooks: {
-			onInsert: async (ctx, doc) => {
-				/* react */
-			},
-		},
-	},
-	subjects: { beneficiary: "beneficiaries", event: "events" },
-	cards: {
-		hooks: {
-			evalRead: async (ctx, orgId) => {
-				/* auth */
-			},
-		},
-	},
-	procedures: {
-		hooks: {
-			onInsert: async (ctx, doc) => {
-				/* react */
-			},
-		},
+const b = bridge.create(components.bridge, {
+	subjects: {
+		beneficiary: { table: "beneficiaries" },
+		event: { table: "events" },
 	},
 });
 ```
