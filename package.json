@@ -17,7 +17,10 @@
 		"url": "https://github.com/trestleinc/bridge/issues"
 	},
 	"license": "Apache-2.0",
-	"repository": "https://github.com/trestleinc/bridge",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/trestleinc/bridge.git"
+	},
 	"files": [
 		"dist",
 		"LICENSE",

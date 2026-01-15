@@ -474,6 +474,7 @@ src/
 Bridge follows a consistent API design pattern across all entry points:
 
 **1. Factory Pattern** - Create configured instances with hooks:
+
 ```typescript
 import { bridge } from "@trestleinc/bridge/server";
 
@@ -494,9 +495,21 @@ const b = bridge(components.bridge)({
 			},
 		},
 	},
-  subjects: { beneficiary: "beneficiaries", event: "events" },
-  cards: { hooks: { evalRead: async (ctx, orgId) => { /* auth */ } } },
-  procedures: { hooks: { onInsert: async (ctx, doc) => { /* react */ } } },
+	subjects: { beneficiary: "beneficiaries", event: "events" },
+	cards: {
+		hooks: {
+			evalRead: async (ctx, orgId) => {
+				/* auth */
+			},
+		},
+	},
+	procedures: {
+		hooks: {
+			onInsert: async (ctx, doc) => {
+				/* react */
+			},
+		},
+	},
 });
 ```
 
@@ -513,7 +526,7 @@ b.evaluations.complete; // Complete an evaluation
 
 **3. Getter Pattern** - Direct property access for resource methods:
 
-```typescript
+````typescript
 // Each method returns a Convex function reference
 export const get = b.cards.get; // Re-export as Convex query
 export const list = b.cards.list; // Re-export as Convex query
@@ -524,13 +537,14 @@ b.cards.list         // List cards
 b.procedures.create  // Create a procedure
 b.deliverables.evaluate // Evaluate deliverables
 b.evaluations.complete  // Complete an evaluation
-```
+````
 
 **3. Getter Pattern** - Direct property access for resource methods:
+
 ```typescript
 // Each method returns a Convex function reference
-export const get = b.cards.get;      // Re-export as Convex query
-export const list = b.cards.list;    // Re-export as Convex query
+export const get = b.cards.get; // Re-export as Convex query
+export const list = b.cards.list; // Re-export as Convex query
 export const create = b.cards.create; // Re-export as Convex mutation
 ```
 
@@ -556,10 +570,17 @@ import {
 	procedureDocValidator,
 	createId,
 	parseDuration,
-  Card, Procedure, Deliverable, Evaluation,
-  CardType, SecurityLevel, ProcedureType,
-  cardDocValidator, procedureDocValidator,
-  createId, parseDuration,
+	Card,
+	Procedure,
+	Deliverable,
+	Evaluation,
+	CardType,
+	SecurityLevel,
+	ProcedureType,
+	cardDocValidator,
+	procedureDocValidator,
+	createId,
+	parseDuration,
 } from "@trestleinc/bridge";
 ```
 
