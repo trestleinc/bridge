@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { nullable } from "convex-helpers/validators";
 import { mutation, query } from "$/component/_generated/server";
-import { getLogger } from "$/component/logger";
+import { getLogger } from "$/shared/logger";
 import {
 	cancelledResultValidator,
 	cardDocValidator,

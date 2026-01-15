@@ -448,10 +448,24 @@ import {
 	NotFoundError,
 	ValidationError,
 	NonRetriableError,
-
-	// Logger
-	getLogger,
 } from "@trestleinc/bridge/client";
+```
+
+### Logger (`$/shared/logger`)
+
+All logging is unified in `shared/` using LogTape with ANSI colored console output:
+
+```typescript
+import { getLogger } from "$/shared/logger";
+
+// Get a LogTape logger with category
+const logger = getLogger(["bridge", "cards"]);
+logger.info("Card created", { cardId: "card_123" });
+logger.debug("Processing request", { procedureId });
+logger.error("Failed to evaluate", { error });
+
+// Categories help filter and organize log output
+// ANSI colored output is configured automatically
 ```
 
 ## Project Structure
@@ -459,9 +473,10 @@ import {
 ```
 src/
 ├── shared/
-│   └── index.ts         # All validators, types, branded IDs, enums, utilities
+│   ├── index.ts         # All validators, types, branded IDs, enums, utilities
+│   └── logger.ts        # Unified LogTape logger (ANSI colored console output)
 ├── client/
-│   └── index.ts         # Error types, logger
+│   └── index.ts         # Error types
 ├── server/
 │   ├── index.ts         # Factory function, triggers, error types
 │   └── resources/       # Resource implementations (cards, procedures, etc.)
@@ -554,8 +569,11 @@ export const create = b.cards.create; // Re-export as Convex mutation
 // Server - everything from one import
 import { bridge, BridgeError, NotFoundError, createTriggers } from "@trestleinc/bridge/server";
 
-// Client - everything from one import
-import { NetworkError, ValidationError, getLogger } from "@trestleinc/bridge/client";
+// Client - error types from one import
+import { NetworkError, ValidationError } from "@trestleinc/bridge/client";
+
+// Logger - unified in shared
+import { getLogger } from "$/shared/logger";
 
 // Shared - all validators and types from one import (default export)
 import {

@@ -606,3 +606,9 @@ export type EvaluationHooks<T extends object> = ResourceHooks<T> & {
 export type EvaluationOptions<T extends object> = {
 	hooks?: EvaluationHooks<T>;
 };
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+export { getLogger, type Logger } from "./logger";

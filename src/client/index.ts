@@ -22,7 +22,7 @@ export {
 // Logger Utility
 // ============================================================================
 
-export { getLogger } from "$/client/logger";
+export { getLogger } from "$/shared/logger";
 
 // ============================================================================
 // Bridge Client Factory

@@ -42,8 +42,7 @@ bun test <path>      # Run specific test file
 src/
 ├── client/                  # Client-side utilities
 │   ├── index.ts             # Public exports
-│   ├── errors.ts            # Error classes (Effect-based)
-│   └── logger.ts            # LogTape logger
+│   └── errors.ts            # Error classes (Effect-based)
 ├── server/                  # Server-side (Convex functions)
 │   ├── index.ts             # Public exports
 │   ├── bridge.ts            # bridge() factory
@@ -60,11 +59,11 @@ src/
 ├── component/               # Internal Convex component
 │   ├── convex.config.ts     # Component config
 │   ├── schema.ts            # Database schema (cards, procedures, deliverables, evaluations)
-│   ├── public.ts            # Component API
-│   └── logger.ts            # Component logging
+│   └── public.ts            # Component API
 ├── shared/                  # Shared types (all environments)
 │   ├── index.ts             # Re-exports from validators.ts
-│   └── validators.ts        # All validators AND types (single source of truth)
+│   ├── validators.ts        # All validators AND types (single source of truth)
+│   └── logger.ts            # Unified LogTape logger (ANSI colored console output)
 └── env.d.ts                 # Environment type declarations
 ```
 
@@ -163,9 +162,19 @@ b.aggregate(ctx, input); // Aggregate context from subject hierarchy
 ```typescript
 // Error types (Effect-based)
 (NetworkError, AuthorizationError, NotFoundError, ValidationError, NonRetriableError);
+```
 
-// Logger
-getLogger();
+### Logger (`$/shared/logger`)
+
+```typescript
+import { getLogger } from "$/shared/logger";
+
+// Get a LogTape logger with category
+const logger = getLogger(["bridge", "cards"]);
+logger.info("Card created", { cardId: "card_123" });
+
+// ANSI colored console output configured automatically
+// Categories help filter and organize log output
 ```
 
 ### Shared (`@trestleinc/bridge`)
@@ -317,7 +326,7 @@ try {
 - **Organization-scoped** - All data is scoped by `organizationId`
 - **Subject bindings** - Bind subjects to host tables for auto-resolution
 - **Hooks receive full docs** - `evalRemove` and `onRemove` receive full document
-- **LogTape logging** - Use LogTape, not console.\*
+- **LogTape logging** - Use LogTape from `$/shared/logger`, not console.\*
 - **Import types** - Use `import type` for type-only imports
 - **Single source of truth** - All validators and types in `$/shared/validators`
 - **Types from validators** - Use `Infer<typeof validator>`, not duplicate interfaces

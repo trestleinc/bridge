@@ -8,14 +8,12 @@
  * @module
  */
 
-import type * as logger from "../logger.js";
 import type * as public_ from "../public.js";
 
 import type { ApiFromModules, FilterApi, FunctionReference } from "convex/server";
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
-	logger: typeof logger;
 	public: typeof public_;
 }> = anyApi as any;
 
