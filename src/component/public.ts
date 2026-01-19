@@ -32,10 +32,13 @@ const _cardGet = query({
 	args: { id: v.string() },
 	returns: nullable(cardDocValidator),
 	handler: async (ctx, { id }) => {
-		return ctx.db
+		const doc = await ctx.db
 			.query("cards")
 			.withIndex("by_uuid", q => q.eq("id", id))
 			.unique();
+		if (!doc) return null;
+		const { _id, _creationTime, ...rest } = doc;
+		return rest;
 	},
 });
 
@@ -43,10 +46,13 @@ const _cardFind = query({
 	args: { organizationId: v.string(), slug: v.string() },
 	returns: nullable(cardDocValidator),
 	handler: async (ctx, { organizationId, slug }) => {
-		return ctx.db
+		const doc = await ctx.db
 			.query("cards")
 			.withIndex("by_slug", q => q.eq("organizationId", organizationId).eq("slug", slug))
 			.first();
+		if (!doc) return null;
+		const { _id, _creationTime, ...rest } = doc;
+		return rest;
 	},
 });
 
@@ -58,16 +64,18 @@ const _cardList = query({
 	},
 	returns: v.array(cardDocValidator),
 	handler: async (ctx, { organizationId, subject, limit = 100 }) => {
-		if (subject) {
-			return ctx.db
-				.query("cards")
-				.withIndex("by_subject", q => q.eq("organizationId", organizationId).eq("subject", subject))
-				.take(limit);
-		}
-		return ctx.db
-			.query("cards")
-			.withIndex("by_organization", q => q.eq("organizationId", organizationId))
-			.take(limit);
+		const docs = subject
+			? await ctx.db
+					.query("cards")
+					.withIndex("by_subject", q =>
+						q.eq("organizationId", organizationId).eq("subject", subject),
+					)
+					.take(limit)
+			: await ctx.db
+					.query("cards")
+					.withIndex("by_organization", q => q.eq("organizationId", organizationId))
+					.take(limit);
+		return docs.map(({ _id, _creationTime, ...rest }) => rest);
 	},
 });
 
@@ -97,16 +105,18 @@ const _cardCreate = mutation({
 				);
 			}
 			logger.info("Card exists, returning", { slug: args.slug });
-			return existing;
+			const { _id, _creationTime, ...rest } = existing;
+			return rest;
 		}
 
 		const id = crypto.randomUUID();
 		const card = { id, ...args, createdAt: Date.now() };
-		const _id = await ctx.db.insert("cards", card);
-		const created = await ctx.db.get(_id);
+		const docId = await ctx.db.insert("cards", card);
+		const created = await ctx.db.get(docId);
 		if (!created) throw new Error("Failed to create card");
 		logger.info("Card created", { id, slug: args.slug });
-		return created;
+		const { _id, _creationTime, ...rest } = created;
+		return rest;
 	},
 });
 
@@ -119,10 +129,13 @@ const _procedureGet = query({
 	args: { id: v.string() },
 	returns: nullable(procedureDocValidator),
 	handler: async (ctx, { id }) => {
-		return ctx.db
+		const doc = await ctx.db
 			.query("procedures")
 			.withIndex("by_uuid", q => q.eq("id", id))
 			.unique();
+		if (!doc) return null;
+		const { _id, _creationTime, ...rest } = doc;
+		return rest;
 	},
 });
 
@@ -134,20 +147,20 @@ const _procedureList = query({
 	},
 	returns: v.array(procedureDocValidator),
 	handler: async (ctx, { organizationId, procedureType, limit = 50 }) => {
-		if (procedureType) {
-			return ctx.db
-				.query("procedures")
-				.withIndex("by_procedureType", q =>
-					q.eq("organizationId", organizationId).eq("procedureType", procedureType),
-				)
-				.order("desc")
-				.take(limit);
-		}
-		return ctx.db
-			.query("procedures")
-			.withIndex("by_organization", q => q.eq("organizationId", organizationId))
-			.order("desc")
-			.take(limit);
+		const docs = procedureType
+			? await ctx.db
+					.query("procedures")
+					.withIndex("by_procedureType", q =>
+						q.eq("organizationId", organizationId).eq("procedureType", procedureType),
+					)
+					.order("desc")
+					.take(limit)
+			: await ctx.db
+					.query("procedures")
+					.withIndex("by_organization", q => q.eq("organizationId", organizationId))
+					.order("desc")
+					.take(limit);
+		return docs.map(({ _id, _creationTime, ...rest }) => rest);
 	},
 });
 
@@ -374,10 +387,13 @@ const _deliverableGet = query({
 	args: { id: v.string() },
 	returns: nullable(deliverableDocValidator),
 	handler: async (ctx, { id }) => {
-		return ctx.db
+		const doc = await ctx.db
 			.query("deliverables")
 			.withIndex("by_uuid", q => q.eq("id", id))
 			.unique();
+		if (!doc) return null;
+		const { _id, _creationTime, ...rest } = doc;
+		return rest;
 	},
 });
 
@@ -390,7 +406,7 @@ const _deliverableList = query({
 	},
 	returns: v.array(deliverableDocValidator),
 	handler: async (ctx, { organizationId, subject, status, limit = 50 }) => {
-		const results = subject
+		const docs = subject
 			? await ctx.db
 					.query("deliverables")
 					.withIndex("by_subject", q =>
@@ -403,7 +419,8 @@ const _deliverableList = query({
 					.withIndex("by_organization", q => q.eq("organizationId", organizationId))
 					.order("desc")
 					.take(limit);
-		return status ? results.filter(d => d.status === status) : results;
+		const filtered = status ? docs.filter(d => d.status === status) : docs;
+		return filtered.map(({ _id, _creationTime, ...rest }) => rest);
 	},
 });
 
@@ -583,10 +600,13 @@ const _evaluationGet = query({
 	args: { id: v.string() },
 	returns: nullable(evaluationDocValidator),
 	handler: async (ctx, { id }) => {
-		return ctx.db
+		const doc = await ctx.db
 			.query("evaluations")
 			.withIndex("by_uuid", q => q.eq("id", id))
 			.unique();
+		if (!doc) return null;
+		const { _id, _creationTime, ...rest } = doc;
+		return rest;
 	},
 });
 
@@ -600,29 +620,31 @@ const _evaluationList = query({
 	returns: v.array(evaluationDocValidator),
 	handler: async (ctx, { organizationId, deliverableId, status, limit = 50 }) => {
 		// Use most specific index available
+		let docs;
 		if (deliverableId) {
-			return ctx.db
+			docs = await ctx.db
 				.query("evaluations")
 				.withIndex("by_organization_deliverable", q =>
 					q.eq("organizationId", organizationId).eq("deliverableId", deliverableId),
 				)
 				.order("desc")
 				.take(limit);
-		}
-		if (status) {
-			return ctx.db
+		} else if (status) {
+			docs = await ctx.db
 				.query("evaluations")
 				.withIndex("by_organization_status", q =>
 					q.eq("organizationId", organizationId).eq("status", status),
 				)
 				.order("desc")
 				.take(limit);
+		} else {
+			docs = await ctx.db
+				.query("evaluations")
+				.withIndex("by_organization", q => q.eq("organizationId", organizationId))
+				.order("desc")
+				.take(limit);
 		}
-		return ctx.db
-			.query("evaluations")
-			.withIndex("by_organization", q => q.eq("organizationId", organizationId))
-			.order("desc")
-			.take(limit);
+		return docs.map(({ _id, _creationTime, ...rest }) => rest);
 	},
 });
 
