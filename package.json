@@ -64,7 +64,7 @@
 		"access": "public"
 	},
 	"scripts": {
-		"build": "oxfmt --write . && oxlint --fix && tsdown",
+		"build": "tsdown",
 		"dev": "tsdown --watch",
 		"clean": "rm -rf dist"
 	},
