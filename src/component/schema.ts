@@ -1,5 +1,5 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { defineSchema, defineTable } from 'convex/server';
+import { v } from 'convex/values';
 import {
 	cardTypeValidator,
 	deliverableStatusValidator,
@@ -12,7 +12,7 @@ import {
 	resultValidator,
 	scheduleValidator,
 	securityLevelValidator,
-} from "$/shared";
+} from '$/shared';
 
 export default defineSchema({
 	cards: defineTable({
@@ -26,10 +26,10 @@ export default defineSchema({
 		createdBy: v.string(),
 		createdAt: v.number(),
 	})
-		.index("by_uuid", ["id"])
-		.index("by_organization", ["organizationId"])
-		.index("by_slug", ["organizationId", "slug"])
-		.index("by_subject", ["organizationId", "subject"]),
+		.index('by_uuid', ['id'])
+		.index('by_organization', ['organizationId'])
+		.index('by_slug', ['organizationId', 'slug'])
+		.index('by_subject', ['organizationId', 'subject']),
 
 	procedures: defineTable({
 		id: v.string(),
@@ -41,15 +41,15 @@ export default defineSchema({
 			v.object({
 				type: v.string(),
 				operation: operationValidator,
-			}),
+			})
 		),
 		cards: v.array(procedureCardValidator),
 		createdAt: v.number(),
 		updatedAt: v.number(),
 	})
-		.index("by_uuid", ["id"])
-		.index("by_organization", ["organizationId"])
-		.index("by_procedureType", ["organizationId", "procedureType"]),
+		.index('by_uuid', ['id'])
+		.index('by_organization', ['organizationId'])
+		.index('by_procedureType', ['organizationId', 'procedureType']),
 
 	deliverables: defineTable({
 		id: v.string(),
@@ -63,9 +63,9 @@ export default defineSchema({
 		createdAt: v.number(),
 		updatedAt: v.number(),
 	})
-		.index("by_uuid", ["id"])
-		.index("by_organization", ["organizationId"])
-		.index("by_subject", ["organizationId", "subject"]),
+		.index('by_uuid', ['id'])
+		.index('by_organization', ['organizationId'])
+		.index('by_subject', ['organizationId', 'subject']),
 
 	evaluations: defineTable({
 		id: v.string(),
@@ -82,10 +82,10 @@ export default defineSchema({
 		createdAt: v.number(),
 		completedAt: v.optional(v.number()),
 	})
-		.index("by_uuid", ["id"])
-		.index("by_deliverable", ["deliverableId"])
-		.index("by_organization", ["organizationId"])
-		.index("by_status", ["status", "scheduledFor"])
-		.index("by_organization_deliverable", ["organizationId", "deliverableId"])
-		.index("by_organization_status", ["organizationId", "status"]),
+		.index('by_uuid', ['id'])
+		.index('by_deliverable', ['deliverableId'])
+		.index('by_organization', ['organizationId'])
+		.index('by_status', ['status', 'scheduledFor'])
+		.index('by_organization_deliverable', ['organizationId', 'deliverableId'])
+		.index('by_organization_status', ['organizationId', 'status']),
 });

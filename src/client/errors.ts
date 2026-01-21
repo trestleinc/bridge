@@ -4,30 +4,30 @@
  * Error types for Bridge client operations.
  */
 
-import { Data } from "effect";
+import { Data } from 'effect';
 
 /** Error for network-related failures */
-export class NetworkError extends Data.TaggedError("NetworkError")<{
+export class NetworkError extends Data.TaggedError('NetworkError')<{
 	readonly cause: unknown;
 	readonly retryable: boolean;
 	readonly operation: string;
 }> {}
 
 /** Error when authorization check fails */
-export class AuthorizationError extends Data.TaggedError("AuthorizationError")<{
+export class AuthorizationError extends Data.TaggedError('AuthorizationError')<{
 	readonly operation: string;
 	readonly organizationId: string;
 	readonly reason?: string;
 }> {}
 
 /** Error when a required entity is not found */
-export class NotFoundError extends Data.TaggedError("NotFoundError")<{
-	readonly entity: "card" | "procedure" | "deliverable" | "evaluation";
+export class NotFoundError extends Data.TaggedError('NotFoundError')<{
+	readonly entity: 'card' | 'procedure' | 'deliverable' | 'evaluation';
 	readonly id: string;
 }> {}
 
 /** Error when validation fails */
-export class ValidationError extends Data.TaggedError("ValidationError")<{
+export class ValidationError extends Data.TaggedError('ValidationError')<{
 	readonly field: string;
 	readonly message: string;
 	readonly value?: unknown;
@@ -37,6 +37,6 @@ export class ValidationError extends Data.TaggedError("ValidationError")<{
 export class NonRetriableError extends Error {
 	constructor(message: string) {
 		super(message);
-		this.name = "NonRetriableError";
+		this.name = 'NonRetriableError';
 	}
 }

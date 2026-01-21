@@ -7,15 +7,15 @@
  * for deliverable evaluation.
  */
 
-import type { GenericDataModel, GenericMutationCtx } from "convex/server";
-import type { BridgeComponentApi } from "$/server";
-import type { SubjectConfig } from "$/shared";
+import type { GenericDataModel, GenericMutationCtx } from 'convex/server';
+import type { BridgeComponentApi } from '$/server';
+import type { SubjectConfig } from '$/shared';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type Operation = "insert" | "update" | "delete";
+type Operation = 'insert' | 'update' | 'delete';
 
 type Attribute = {
 	slug: string;
@@ -37,7 +37,7 @@ type Change = {
 
 export type TriggerHandler<D extends GenericDataModel = GenericDataModel> = (
 	ctx: GenericMutationCtx<D>,
-	change: Change,
+	change: Change
 ) => Promise<void>;
 
 // ============================================================================
@@ -59,15 +59,15 @@ export type TriggerHandler<D extends GenericDataModel = GenericDataModel> = (
 export function extractAttributeChanges(
 	operation: Operation,
 	oldAttributes: Attribute[] | undefined,
-	newAttributes: Attribute[] | undefined,
+	newAttributes: Attribute[] | undefined
 ): string[] {
-	if (operation === "delete") {
+	if (operation === 'delete') {
 		return [];
 	}
 
-	if (operation === "insert") {
+	if (operation === 'insert') {
 		if (!newAttributes) return [];
-		return newAttributes.map(attr => attr.slug);
+		return newAttributes.map((attr) => attr.slug);
 	}
 
 	// operation === 'update'
@@ -129,13 +129,13 @@ export function extractAttributeChanges(
 export function createSubjectTrigger<D extends GenericDataModel = GenericDataModel>(
 	component: BridgeComponentApi,
 	subjectName: string,
-	config: SubjectConfig,
+	config: SubjectConfig
 ): TriggerHandler<D> {
 	const { trackedFields = [] } = config;
 
 	const handler = async (ctx: GenericMutationCtx<D>, change: Change): Promise<void> => {
 		// Skip delete operations - deliverables typically don't need to evaluate on delete
-		if (change.operation === "delete") {
+		if (change.operation === 'delete') {
 			return;
 		}
 
@@ -148,12 +148,12 @@ export function createSubjectTrigger<D extends GenericDataModel = GenericDataMod
 		const changedFields = extractAttributeChanges(
 			change.operation,
 			change.oldDoc?.attributes,
-			change.newDoc.attributes,
+			change.newDoc.attributes
 		);
 
 		// Add tracked fields that changed
 		for (const field of trackedFields) {
-			if (change.operation === "insert") {
+			if (change.operation === 'insert') {
 				// For inserts, include all tracked fields if they exist
 				if (change.newDoc[field] !== undefined) {
 					changedFields.push(field);
@@ -172,7 +172,7 @@ export function createSubjectTrigger<D extends GenericDataModel = GenericDataMod
 		}
 
 		// Determine Bridge operation type
-		const operation = change.operation === "insert" ? "create" : "update";
+		const operation = change.operation === 'insert' ? 'create' : 'update';
 
 		// Delegate to Bridge for deliverable evaluation
 		await ctx.runMutation(component.public.deliverableEvaluate, {
@@ -223,7 +223,7 @@ export type SubjectsConfig = Record<string, SubjectConfig>;
  */
 export function createTriggers<D extends GenericDataModel = GenericDataModel>(
 	component: BridgeComponentApi,
-	subjects: SubjectsConfig,
+	subjects: SubjectsConfig
 ): Record<string, TriggerHandler<D>> {
 	const handlers: Record<string, TriggerHandler<D>> = {};
 

@@ -1,8 +1,8 @@
-import { mutationGeneric, queryGeneric } from "convex/server";
-import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server";
-import { NotFoundError } from "$/server/errors";
-import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from "$/shared";
+import { mutationGeneric, queryGeneric } from 'convex/server';
+import { v } from 'convex/values';
+import type { BridgeComponentApi } from '$/server';
+import { NotFoundError } from '$/server/errors';
+import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from '$/shared';
 import {
 	operationValidator,
 	procedureCardValidator,
@@ -11,16 +11,16 @@ import {
 	submitResultValidator,
 	type Procedure,
 	type SubmissionResult,
-} from "$/shared";
+} from '$/shared';
 
 export function createProcedureResource(
 	component: BridgeComponentApi,
-	options?: ResourceOptions<Procedure>,
+	options?: ResourceOptions<Procedure>
 ) {
 	const hooks = options?.hooks;
 
 	return {
-		__resource: "procedure" as const,
+		__resource: 'procedure' as const,
 
 		get: queryGeneric({
 			args: { id: v.string() },
@@ -90,7 +90,7 @@ export function createProcedureResource(
 			returns: v.object({ id: v.string() }),
 			handler: async (ctx: AnyMutationCtx, { id, ...updates }) => {
 				const prev = await ctx.runQuery(component.public.procedureGet, { id });
-				if (!prev) throw new NotFoundError("Procedure", id);
+				if (!prev) throw new NotFoundError('Procedure', id);
 
 				if (hooks?.evalWrite) {
 					await hooks.evalWrite(ctx, { ...prev, ...updates });
@@ -114,7 +114,7 @@ export function createProcedureResource(
 			returns: v.object({ removed: v.boolean() }),
 			handler: async (ctx: AnyMutationCtx, { id }) => {
 				const doc = await ctx.runQuery(component.public.procedureGet, { id });
-				if (!doc) throw new NotFoundError("Procedure", id);
+				if (!doc) throw new NotFoundError('Procedure', id);
 
 				if (hooks?.evalRemove) {
 					await hooks.evalRemove(ctx, doc);

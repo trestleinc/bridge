@@ -4,43 +4,43 @@
  * Single source of truth for all validators, types, utilities, and hooks.
  */
 
-import type { GenericDataModel, GenericMutationCtx, GenericQueryCtx } from "convex/server";
-import { type Infer, v } from "convex/values";
-import { literals } from "convex-helpers/validators";
+import type { GenericDataModel, GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import { type Infer, v } from 'convex/values';
+import { literals } from 'convex-helpers/validators';
 
 // ============================================================================
 // Enum Validators (using literals helper)
 // ============================================================================
 
 export const cardTypeValidator = literals(
-	"STRING",
-	"TEXT",
-	"NUMBER",
-	"BOOLEAN",
-	"DATE",
-	"EMAIL",
-	"URL",
-	"PHONE",
-	"SSN",
-	"ADDRESS",
-	"SUBJECT",
-	"ARRAY",
+	'STRING',
+	'TEXT',
+	'NUMBER',
+	'BOOLEAN',
+	'DATE',
+	'EMAIL',
+	'URL',
+	'PHONE',
+	'SSN',
+	'ADDRESS',
+	'SUBJECT',
+	'ARRAY'
 );
 export type CardTypeValue = Infer<typeof cardTypeValidator>;
 
-export const securityLevelValidator = literals("PUBLIC", "CONFIDENTIAL", "RESTRICTED");
+export const securityLevelValidator = literals('PUBLIC', 'CONFIDENTIAL', 'RESTRICTED');
 export type SecurityLevelValue = Infer<typeof securityLevelValidator>;
 
-export const procedureTypeValidator = literals("form", "import", "api");
+export const procedureTypeValidator = literals('form', 'import', 'api');
 export type ProcedureTypeValue = Infer<typeof procedureTypeValidator>;
 
-export const operationValidator = literals("create", "update", "delete");
+export const operationValidator = literals('create', 'update', 'delete');
 export type OperationValue = Infer<typeof operationValidator>;
 
-export const evaluationStatusValidator = literals("pending", "running", "completed", "failed");
+export const evaluationStatusValidator = literals('pending', 'running', 'completed', 'failed');
 export type EvaluationStatusValue = Infer<typeof evaluationStatusValidator>;
 
-export const deliverableStatusValidator = literals("active", "paused");
+export const deliverableStatusValidator = literals('active', 'paused');
 export type DeliverableStatusValue = Infer<typeof deliverableStatusValidator>;
 
 // ============================================================================
@@ -204,35 +204,35 @@ export const removedResultValidator = v.object({ removed: v.boolean() });
 // ============================================================================
 
 const cardTypeValues = {
-	STRING: "STRING",
-	TEXT: "TEXT",
-	NUMBER: "NUMBER",
-	BOOLEAN: "BOOLEAN",
-	DATE: "DATE",
-	EMAIL: "EMAIL",
-	URL: "URL",
-	PHONE: "PHONE",
-	SSN: "SSN",
-	ADDRESS: "ADDRESS",
-	SUBJECT: "SUBJECT",
-	ARRAY: "ARRAY",
+	STRING: 'STRING',
+	TEXT: 'TEXT',
+	NUMBER: 'NUMBER',
+	BOOLEAN: 'BOOLEAN',
+	DATE: 'DATE',
+	EMAIL: 'EMAIL',
+	URL: 'URL',
+	PHONE: 'PHONE',
+	SSN: 'SSN',
+	ADDRESS: 'ADDRESS',
+	SUBJECT: 'SUBJECT',
+	ARRAY: 'ARRAY',
 } as const;
 
 export type CardType = (typeof cardTypeValues)[keyof typeof cardTypeValues];
 
 const cardTypeDisplayNames: Record<CardType, string> = {
-	STRING: "Text",
-	TEXT: "Long Text",
-	NUMBER: "Number",
-	BOOLEAN: "Yes/No",
-	DATE: "Date",
-	EMAIL: "Email",
-	URL: "URL",
-	PHONE: "Phone",
-	SSN: "SSN",
-	ADDRESS: "Address",
-	SUBJECT: "Subject Reference",
-	ARRAY: "List",
+	STRING: 'Text',
+	TEXT: 'Long Text',
+	NUMBER: 'Number',
+	BOOLEAN: 'Yes/No',
+	DATE: 'Date',
+	EMAIL: 'Email',
+	URL: 'URL',
+	PHONE: 'Phone',
+	SSN: 'SSN',
+	ADDRESS: 'Address',
+	SUBJECT: 'Subject Reference',
+	ARRAY: 'List',
 };
 
 export const CardType = {
@@ -243,9 +243,9 @@ export const CardType = {
 } as const;
 
 const securityLevelValues = {
-	PUBLIC: "PUBLIC",
-	CONFIDENTIAL: "CONFIDENTIAL",
-	RESTRICTED: "RESTRICTED",
+	PUBLIC: 'PUBLIC',
+	CONFIDENTIAL: 'CONFIDENTIAL',
+	RESTRICTED: 'RESTRICTED',
 } as const;
 
 export type SecurityLevel = (typeof securityLevelValues)[keyof typeof securityLevelValues];
@@ -264,17 +264,17 @@ export const SecurityLevel = {
 } as const;
 
 const procedureTypeValues = {
-	FORM: "form",
-	IMPORT: "import",
-	API: "api",
+	FORM: 'form',
+	IMPORT: 'import',
+	API: 'api',
 } as const;
 
 export type ProcedureType = (typeof procedureTypeValues)[keyof typeof procedureTypeValues];
 
 const procedureTypeDisplayNames: Record<ProcedureType, string> = {
-	form: "Form",
-	import: "Import",
-	api: "API",
+	form: 'Form',
+	import: 'Import',
+	api: 'API',
 };
 
 export const ProcedureType = {
@@ -287,17 +287,17 @@ export const ProcedureType = {
 export type Subject = string;
 
 const operationValues = {
-	CREATE: "create",
-	UPDATE: "update",
-	DELETE: "delete",
+	CREATE: 'create',
+	UPDATE: 'update',
+	DELETE: 'delete',
 } as const;
 
 export type Operation = (typeof operationValues)[keyof typeof operationValues];
 
 const operationDisplayNames: Record<Operation, string> = {
-	create: "Create",
-	update: "Update",
-	delete: "Delete",
+	create: 'Create',
+	update: 'Update',
+	delete: 'Delete',
 };
 
 export const Operation = {
@@ -308,10 +308,10 @@ export const Operation = {
 } as const;
 
 const evaluationStatusValues = {
-	PENDING: "pending",
-	RUNNING: "running",
-	COMPLETED: "completed",
-	FAILED: "failed",
+	PENDING: 'pending',
+	RUNNING: 'running',
+	COMPLETED: 'completed',
+	FAILED: 'failed',
 } as const;
 
 export type EvaluationStatus = (typeof evaluationStatusValues)[keyof typeof evaluationStatusValues];
@@ -319,8 +319,8 @@ export type EvaluationStatus = (typeof evaluationStatusValues)[keyof typeof eval
 export const EvaluationStatus = { ...evaluationStatusValues } as const;
 
 const deliverableStatusValues = {
-	ACTIVE: "active",
-	PAUSED: "paused",
+	ACTIVE: 'active',
+	PAUSED: 'paused',
 } as const;
 
 export type DeliverableStatus =
@@ -332,7 +332,7 @@ export const DeliverableStatus = { ...deliverableStatusValues } as const;
 // Duration Utilities
 // ============================================================================
 
-type TimeUnit = "s" | "m" | "h" | "d";
+type TimeUnit = 's' | 'm' | 'h' | 'd';
 
 export type Duration = `${number}${TimeUnit}`;
 
@@ -519,7 +519,7 @@ export interface ExecutionResult {
 
 export type CallbackHandler = (
 	deliverable: Deliverable,
-	context: ExecutionContext,
+	context: ExecutionContext
 ) => Promise<ExecutionResult>;
 
 export interface EvaluateTrigger {
@@ -568,11 +568,11 @@ export type LazyValue<T> = T | (() => T);
 export type LazyAsync<T> = T | (() => T | Promise<T>);
 
 export function resolveLazy<T>(value: LazyValue<T>): T {
-	return typeof value === "function" ? (value as () => T)() : value;
+	return typeof value === 'function' ? (value as () => T)() : value;
 }
 
 export async function resolveLazyAsync<T>(value: LazyAsync<T>): Promise<T> {
-	if (typeof value === "function") {
+	if (typeof value === 'function') {
 		return (value as () => T | Promise<T>)();
 	}
 	return value;
@@ -611,4 +611,4 @@ export type EvaluationOptions<T extends object> = {
 // Logger
 // ============================================================================
 
-export { getLogger, type Logger } from "./logger";
+export { getLogger, type Logger } from './logger';

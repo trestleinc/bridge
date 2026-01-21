@@ -4,7 +4,7 @@
  * Import from '@trestleinc/bridge/client' for client-side utilities.
  */
 
-import type { Card, Procedure, Deliverable, Evaluation, SubmissionResult } from "$/shared";
+import type { Card, Procedure, Deliverable, Evaluation, SubmissionResult } from '$/shared';
 
 // ============================================================================
 // Error Types
@@ -16,13 +16,13 @@ export {
 	NonRetriableError,
 	NotFoundError,
 	ValidationError,
-} from "$/client/errors";
+} from '$/client/errors';
 
 // ============================================================================
 // Logger Utility
 // ============================================================================
 
-export { getLogger } from "$/shared/logger";
+export { getLogger } from '$/shared/logger';
 
 // ============================================================================
 // Bridge Client Factory
@@ -165,7 +165,7 @@ export const bridge = {
 		const requireOrgId = (orgId?: string): string => {
 			const id = orgId ?? defaultOrgId;
 			if (!id) {
-				throw new Error("organizationId is required");
+				throw new Error('organizationId is required');
 			}
 			return id;
 		};

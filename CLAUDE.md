@@ -103,15 +103,15 @@ import {
 	NotFoundError,
 	ValidationError,
 	ConflictError,
-} from "@trestleinc/bridge/server";
+} from '@trestleinc/bridge/server';
 
 const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: { table: "beneficiaries" },
-		event: { table: "events" },
+		beneficiary: { table: 'beneficiaries' },
+		event: { table: 'events' },
 		eventInstance: {
-			table: "eventInstances",
-			parents: [{ field: "eventId", subject: "event" }],
+			table: 'eventInstances',
+			parents: [{ field: 'eventId', subject: 'event' }],
 		},
 	},
 });
@@ -158,11 +158,11 @@ b.aggregate(ctx, input); // Aggregate context from subject hierarchy
 ### Logger (`$/shared/logger`)
 
 ```typescript
-import { getLogger } from "$/shared/logger";
+import { getLogger } from '$/shared/logger';
 
 // Get a LogTape logger with category
-const logger = getLogger(["bridge", "cards"]);
-logger.info("Card created", { cardId: "card_123" });
+const logger = getLogger(['bridge', 'cards']);
+logger.info('Card created', { cardId: 'card_123' });
 
 // ANSI colored console output configured automatically
 // Categories help filter and organize log output
@@ -207,17 +207,17 @@ formatDuration(ms); // Format milliseconds to Duration
 
 ```typescript
 // convex/bridge.ts
-import { bridge } from "@trestleinc/bridge/server";
-import { components } from "./_generated/api";
+import { bridge } from '@trestleinc/bridge/server';
+import { components } from './_generated/api';
 
 // Minimal configuration - authorization handled at wrapper level
 export const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: { table: "beneficiaries" },
-		event: { table: "events" },
+		beneficiary: { table: 'beneficiaries' },
+		event: { table: 'events' },
 		eventInstance: {
-			table: "eventInstances",
-			parents: [{ field: "eventId", subject: "event" }],
+			table: 'eventInstances',
+			parents: [{ field: 'eventId', subject: 'event' }],
 		},
 	},
 });
@@ -229,9 +229,9 @@ export const b = bridge.create(components.bridge, {
 
 ```typescript
 // convex/procedures.ts - Authorization at wrapper level
-import { query, mutation } from "./_generated/server";
-import { components } from "./_generated/api";
-import { verifyOrgAccess } from "./permissions";
+import { query, mutation } from './_generated/server';
+import { components } from './_generated/api';
+import { verifyOrgAccess } from './permissions';
 
 export const procedureGet = query({
 	args: { id: v.string() },
@@ -250,8 +250,8 @@ export const procedureGet = query({
 
 ```typescript
 // convex/cards.ts
-import { query, mutation } from "./_generated/server";
-import { b } from "./bridge";
+import { query, mutation } from './_generated/server';
+import { b } from './bridge';
 
 // Export bridge resources directly
 export const get = b.cards.get;
@@ -264,15 +264,15 @@ export const create = b.cards.create;
 
 ```typescript
 // convex/triggers.ts
-import { b } from "./bridge";
-import { createTriggers } from "@trestleinc/bridge/server";
+import { b } from './bridge';
+import { createTriggers } from '@trestleinc/bridge/server';
 
 // Generate trigger handlers for change detection
 export const triggers = createTriggers({
 	subjects: {
 		beneficiary: {
-			table: "beneficiaries",
-			trackedFields: ["firstName", "lastName", "email"],
+			table: 'beneficiaries',
+			trackedFields: ['firstName', 'lastName', 'email'],
 		},
 	},
 	onTrigger: async (ctx, subject, subjectId, operation) => {

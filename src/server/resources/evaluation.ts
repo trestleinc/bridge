@@ -1,18 +1,18 @@
-import { mutationGeneric, queryGeneric } from "convex/server";
-import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server";
-import { NotFoundError } from "$/server/errors";
-import type { AnyMutationCtx, AnyQueryCtx, EvaluationOptions } from "$/shared";
-import { evaluationDocValidator, resultValidator, type Evaluation } from "$/shared";
+import { mutationGeneric, queryGeneric } from 'convex/server';
+import { v } from 'convex/values';
+import type { BridgeComponentApi } from '$/server';
+import { NotFoundError } from '$/server/errors';
+import type { AnyMutationCtx, AnyQueryCtx, EvaluationOptions } from '$/shared';
+import { evaluationDocValidator, resultValidator, type Evaluation } from '$/shared';
 
 export function createEvaluationResource(
 	component: BridgeComponentApi,
-	options?: EvaluationOptions<Evaluation>,
+	options?: EvaluationOptions<Evaluation>
 ) {
 	const hooks = options?.hooks;
 
 	return {
-		__resource: "evaluation" as const,
+		__resource: 'evaluation' as const,
 
 		get: queryGeneric({
 			args: { id: v.string() },
@@ -49,7 +49,7 @@ export function createEvaluationResource(
 			returns: v.object({ started: v.boolean() }),
 			handler: async (ctx: AnyMutationCtx, { id }) => {
 				const doc = await ctx.runQuery(component.public.evaluationGet, { id });
-				if (!doc) throw new NotFoundError("Evaluation", id);
+				if (!doc) throw new NotFoundError('Evaluation', id);
 				if (hooks?.evalWrite) {
 					await hooks.evalWrite(ctx, doc);
 				}
@@ -62,7 +62,7 @@ export function createEvaluationResource(
 			returns: v.object({ cancelled: v.boolean() }),
 			handler: async (ctx: AnyMutationCtx, { id }) => {
 				const doc = await ctx.runQuery(component.public.evaluationGet, { id });
-				if (!doc) throw new NotFoundError("Evaluation", id);
+				if (!doc) throw new NotFoundError('Evaluation', id);
 				if (hooks?.evalWrite) {
 					await hooks.evalWrite(ctx, doc);
 				}
@@ -80,7 +80,7 @@ export function createEvaluationResource(
 				const prev = await ctx.runQuery(component.public.evaluationGet, {
 					id: args.id,
 				});
-				if (!prev) throw new NotFoundError("Evaluation", args.id);
+				if (!prev) throw new NotFoundError('Evaluation', args.id);
 
 				if (hooks?.evalWrite) {
 					await hooks.evalWrite(ctx, prev);

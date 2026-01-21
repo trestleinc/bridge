@@ -1,8 +1,8 @@
-import { mutationGeneric, queryGeneric } from "convex/server";
-import { v } from "convex/values";
-import type { BridgeComponentApi } from "$/server";
-import { NotFoundError } from "$/server/errors";
-import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from "$/shared";
+import { mutationGeneric, queryGeneric } from 'convex/server';
+import { v } from 'convex/values';
+import type { BridgeComponentApi } from '$/server';
+import { NotFoundError } from '$/server/errors';
+import type { AnyMutationCtx, AnyQueryCtx, ResourceOptions } from '$/shared';
 import {
 	deliverableDocValidator,
 	deliverableStatusValidator,
@@ -12,16 +12,16 @@ import {
 	scheduleValidator,
 	type Deliverable,
 	type DeliverableResult,
-} from "$/shared";
+} from '$/shared';
 
 export function createDeliverableResource(
 	component: BridgeComponentApi,
-	options?: ResourceOptions<Deliverable>,
+	options?: ResourceOptions<Deliverable>
 ) {
 	const hooks = options?.hooks;
 
 	return {
-		__resource: "deliverable" as const,
+		__resource: 'deliverable' as const,
 
 		get: queryGeneric({
 			args: { id: v.string() },
@@ -93,7 +93,7 @@ export function createDeliverableResource(
 			returns: v.object({ id: v.string() }),
 			handler: async (ctx: AnyMutationCtx, { id, ...updates }) => {
 				const prev = await ctx.runQuery(component.public.deliverableGet, { id });
-				if (!prev) throw new NotFoundError("Deliverable", id);
+				if (!prev) throw new NotFoundError('Deliverable', id);
 
 				if (hooks?.evalWrite) {
 					await hooks.evalWrite(ctx, { ...prev, ...updates });

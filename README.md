@@ -23,8 +23,8 @@ bun add @trestleinc/bridge
 
 ```typescript
 // convex/convex.config.ts
-import { defineApp } from "convex/server";
-import bridge from "@trestleinc/bridge/convex.config";
+import { defineApp } from 'convex/server';
+import bridge from '@trestleinc/bridge/convex.config';
 
 const app = defineApp();
 app.use(bridge);
@@ -36,18 +36,18 @@ export default app;
 
 ```typescript
 // convex/bridge.ts
-import { bridge } from "@trestleinc/bridge/server";
-import { components } from "./_generated/api";
+import { bridge } from '@trestleinc/bridge/server';
+import { components } from './_generated/api';
 
 // Minimal configuration - hooks are optional
 export const b = bridge.create(components.bridge, {
 	// Bind subject types to your host tables for automatic context resolution
 	subjects: {
-		beneficiary: { table: "beneficiaries" },
-		event: { table: "events" },
+		beneficiary: { table: 'beneficiaries' },
+		event: { table: 'events' },
 		eventInstance: {
-			table: "eventInstances",
-			parents: [{ field: "eventId", subject: "event" }],
+			table: 'eventInstances',
+			parents: [{ field: 'eventId', subject: 'event' }],
 		},
 	},
 });
@@ -57,7 +57,7 @@ export const b = bridge.create(components.bridge, {
 
 ```typescript
 // convex/cards.ts
-import { b } from "./bridge";
+import { b } from './bridge';
 
 // Export bridge resources directly as Convex functions
 export const get = b.cards.get;
@@ -198,11 +198,11 @@ Validate and submit card values through a procedure:
 
 ```typescript
 const result = await b.submit(ctx, {
-	procedureId: "proc_123",
-	organizationId: "org_456",
-	subject: "beneficiary",
-	subjectId: "ben_789",
-	values: { firstName: "John", lastName: "Doe" },
+	procedureId: 'proc_123',
+	organizationId: 'org_456',
+	subject: 'beneficiary',
+	subjectId: 'ben_789',
+	values: { firstName: 'John', lastName: 'Doe' },
 });
 
 if (result.success) {
@@ -217,10 +217,10 @@ Trigger deliverable evaluation for a subject. If subjects are bound, variables a
 ```typescript
 // With auto-resolution (subjects bound) - no variables needed!
 const readiness = await b.evaluate(ctx, {
-	organizationId: "org_456",
-	subject: "beneficiary",
-	subjectId: "ben_789",
-	operation: "create",
+	organizationId: 'org_456',
+	subject: 'beneficiary',
+	subjectId: 'ben_789',
+	operation: 'create',
 });
 
 for (const r of readiness) {
@@ -235,7 +235,7 @@ for (const r of readiness) {
 Manually resolve subject data from a bound host table:
 
 ```typescript
-const variables = await b.resolve(ctx, "beneficiary", "ben_789");
+const variables = await b.resolve(ctx, 'beneficiary', 'ben_789');
 // { firstName: 'John', lastName: 'Doe', email: 'john@example.com' }
 ```
 
@@ -245,16 +245,16 @@ Register callback handlers and execute deliverables:
 
 ```typescript
 // Register handlers at module level
-b.register("automation", async (deliverable, context) => {
+b.register('automation', async (deliverable, context) => {
 	// Execute automation logic
 	return { success: true, data: { sent: true } };
 });
 
 // Execute in an action
-const result = await b.execute(deliverable, "create", {
-	subject: "beneficiary",
-	subjectId: "ben_789",
-	variables: { firstName: "John" },
+const result = await b.execute(deliverable, 'create', {
+	subject: 'beneficiary',
+	subjectId: 'ben_789',
+	variables: { firstName: 'John' },
 });
 ```
 
@@ -264,8 +264,8 @@ Aggregate context from subject hierarchy:
 
 ```typescript
 const aggregated = await b.aggregate(ctx, {
-	subject: "eventInstance",
-	subjectId: "ei_123",
+	subject: 'eventInstance',
+	subjectId: 'ei_123',
 });
 // Returns variables from eventInstance + parent event + associated beneficiary
 ```
@@ -277,11 +277,11 @@ Bind subject types to your host tables for automatic context resolution:
 ```typescript
 const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: { table: "beneficiaries" },
-		event: { table: "events" },
+		beneficiary: { table: 'beneficiaries' },
+		event: { table: 'events' },
 		eventInstance: {
-			table: "eventInstances",
-			parents: [{ field: "eventId", subject: "event" }],
+			table: 'eventInstances',
+			parents: [{ field: 'eventId', subject: 'event' }],
 		},
 	},
 });
@@ -295,9 +295,9 @@ When subjects are bound, Bridge can automatically fetch subject data when evalua
 
 ```typescript
 // convex/procedures.ts - Authorization at wrapper level
-import { query, mutation } from "./_generated/server";
-import { components } from "./_generated/api";
-import { verifyOrgAccess } from "./permissions";
+import { query, mutation } from './_generated/server';
+import { components } from './_generated/api';
+import { verifyOrgAccess } from './permissions';
 
 export const procedureGet = query({
 	args: { id: v.string() },
@@ -360,7 +360,7 @@ import {
 	type Duration, // "30s" | "5m" | "2h" | "7d"
 	parseDuration,
 	formatDuration,
-} from "@trestleinc/bridge";
+} from '@trestleinc/bridge';
 ```
 
 ### Server (`@trestleinc/bridge/server`)
@@ -379,7 +379,7 @@ import {
 	ValidationError,
 	AuthorizationError,
 	ConflictError,
-} from "@trestleinc/bridge/server";
+} from '@trestleinc/bridge/server';
 ```
 
 ### Client (`@trestleinc/bridge/client`)
@@ -392,7 +392,7 @@ import {
 	NotFoundError,
 	ValidationError,
 	NonRetriableError,
-} from "@trestleinc/bridge/client";
+} from '@trestleinc/bridge/client';
 ```
 
 ### Logger (`$/shared/logger`)
@@ -400,13 +400,13 @@ import {
 All logging is unified in `shared/` using LogTape with ANSI colored console output:
 
 ```typescript
-import { getLogger } from "$/shared/logger";
+import { getLogger } from '$/shared/logger';
 
 // Get a LogTape logger with category
-const logger = getLogger(["bridge", "cards"]);
-logger.info("Card created", { cardId: "card_123" });
-logger.debug("Processing request", { procedureId });
-logger.error("Failed to evaluate", { error });
+const logger = getLogger(['bridge', 'cards']);
+logger.info('Card created', { cardId: 'card_123' });
+logger.debug('Processing request', { procedureId });
+logger.error('Failed to evaluate', { error });
 
 // Categories help filter and organize log output
 // ANSI colored output is configured automatically
@@ -435,13 +435,13 @@ Bridge follows a consistent API design pattern across all entry points:
 **1. Factory Pattern** - Create configured instances:
 
 ```typescript
-import { bridge } from "@trestleinc/bridge/server";
+import { bridge } from '@trestleinc/bridge/server';
 
 // Factory creates a configured bridge instance
 const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: { table: "beneficiaries" },
-		event: { table: "events" },
+		beneficiary: { table: 'beneficiaries' },
+		event: { table: 'events' },
 	},
 });
 ```
@@ -485,13 +485,13 @@ export const create = b.cards.create; // Re-export as Convex mutation
 
 ```typescript
 // Server - everything from one import
-import { bridge, BridgeError, NotFoundError, createTriggers } from "@trestleinc/bridge/server";
+import { bridge, BridgeError, NotFoundError, createTriggers } from '@trestleinc/bridge/server';
 
 // Client - error types from one import
-import { NetworkError, ValidationError } from "@trestleinc/bridge/client";
+import { NetworkError, ValidationError } from '@trestleinc/bridge/client';
 
 // Logger - unified in shared
-import { getLogger } from "$/shared/logger";
+import { getLogger } from '$/shared/logger';
 
 // Shared - all validators and types from one import (default export)
 import {
@@ -517,7 +517,7 @@ import {
 	procedureDocValidator,
 	createId,
 	parseDuration,
-} from "@trestleinc/bridge";
+} from '@trestleinc/bridge';
 ```
 
 ## Technology Stack

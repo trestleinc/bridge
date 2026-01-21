@@ -1,54 +1,54 @@
-import { defineConfig } from "tsdown";
+import { defineConfig } from 'tsdown';
 
-const jsExtensions = () => ({ js: ".js", dts: ".d.ts" });
+const jsExtensions = () => ({ js: '.js', dts: '.d.ts' });
 
 export default defineConfig([
 	{
-		entry: { "shared/index": "src/shared/index.ts" },
-		format: "esm",
-		outDir: "dist",
+		entry: { 'shared/index': 'src/shared/index.ts' },
+		format: 'esm',
+		outDir: 'dist',
 		dts: true,
 		clean: true,
-		platform: "node",
+		platform: 'node',
 		external: [/^convex/],
 		outExtensions: jsExtensions,
 		publint: {
-			level: "warning",
+			level: 'warning',
 		},
 		report: {
 			gzip: true,
 		},
 	},
 	{
-		entry: { "client/index": "src/client/index.ts" },
-		format: "esm",
-		outDir: "dist",
+		entry: { 'client/index': 'src/client/index.ts' },
+		format: 'esm',
+		outDir: 'dist',
 		dts: true,
 		clean: false,
-		platform: "browser",
+		platform: 'browser',
 		shims: true,
-		external: [/^convex/, "@logtape/logtape", "effect", "@effect/platform"],
+		external: [/^convex/, '@logtape/logtape', 'effect', '@effect/platform'],
 		outExtensions: jsExtensions,
 	},
 	{
-		entry: { "server/index": "src/server/index.ts" },
-		format: "esm",
-		outDir: "dist",
+		entry: { 'server/index': 'src/server/index.ts' },
+		format: 'esm',
+		outDir: 'dist',
 		dts: true,
 		clean: false,
-		platform: "node",
-		external: [/^convex/, "effect", "@effect/platform", "@logtape/logtape"],
+		platform: 'node',
+		external: [/^convex/, 'effect', '@effect/platform', '@logtape/logtape'],
 		outExtensions: jsExtensions,
 	},
 	{
-		entry: ["src/component/**/*.ts"],
-		format: "esm",
-		outDir: "dist/component",
+		entry: ['src/component/**/*.ts'],
+		format: 'esm',
+		outDir: 'dist/component',
 		dts: true,
 		clean: false,
 		unbundle: true,
-		platform: "node",
-		external: [/^convex/, "@logtape/logtape"],
+		platform: 'node',
+		external: [/^convex/, '@logtape/logtape'],
 		outExtensions: jsExtensions,
 	},
 ]);

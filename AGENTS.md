@@ -161,11 +161,11 @@ Bind subject types to host tables for automatic context resolution:
 ```typescript
 const b = bridge.create(components.bridge, {
 	subjects: {
-		beneficiary: { table: "beneficiaries" },
-		event: { table: "events" },
+		beneficiary: { table: 'beneficiaries' },
+		event: { table: 'events' },
 		eventInstance: {
-			table: "eventInstances",
-			parents: [{ field: "eventId", subject: "event" }],
+			table: 'eventInstances',
+			parents: [{ field: 'eventId', subject: 'event' }],
 		},
 	},
 });

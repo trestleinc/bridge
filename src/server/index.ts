@@ -9,7 +9,7 @@ import type {
 	GenericDataModel,
 	GenericMutationCtx,
 	GenericQueryCtx,
-} from "convex/server";
+} from 'convex/server';
 import type {
 	AggregatedContext,
 	CallbackHandler,
@@ -28,13 +28,13 @@ import type {
 	SubjectConfig,
 	Submission,
 	SubmissionResult,
-} from "$/shared";
+} from '$/shared';
 import {
 	createCardResource,
 	createDeliverableResource,
 	createEvaluationResource,
 	createProcedureResource,
-} from "$/server/resources";
+} from '$/server/resources';
 
 // ============================================================================
 // Re-exports from shared
@@ -49,9 +49,9 @@ export type {
 	ResourceOptions,
 	LazyValue,
 	LazyAsync,
-} from "$/shared";
+} from '$/shared';
 
-export { resolveLazy, resolveLazyAsync } from "$/shared";
+export { resolveLazy, resolveLazyAsync } from '$/shared';
 
 // ============================================================================
 // Re-exports from resources
@@ -62,7 +62,7 @@ export type {
 	DeliverableResource,
 	EvaluationResource,
 	ProcedureResource,
-} from "$/server/resources";
+} from '$/server/resources';
 
 // ============================================================================
 // Re-exports from errors
@@ -74,7 +74,7 @@ export {
 	ConflictError,
 	NotFoundError,
 	ValidationError,
-} from "$/server/errors";
+} from '$/server/errors';
 
 // ============================================================================
 // Re-exports from triggers
@@ -85,7 +85,7 @@ export {
 	createTriggers,
 	type TriggerHandler,
 	type SubjectsConfig,
-} from "$/server/triggers";
+} from '$/server/triggers';
 
 // ============================================================================
 // Resource Factory Exports
@@ -124,26 +124,26 @@ export const resource = {
 
 export type BridgeComponentApi = {
 	public: {
-		cardGet: FunctionReference<"query", "internal">;
-		cardFind: FunctionReference<"query", "internal">;
-		cardList: FunctionReference<"query", "internal">;
-		cardCreate: FunctionReference<"mutation", "internal">;
-		procedureGet: FunctionReference<"query", "internal">;
-		procedureList: FunctionReference<"query", "internal">;
-		procedureCreate: FunctionReference<"mutation", "internal">;
-		procedureUpdate: FunctionReference<"mutation", "internal">;
-		procedureRemove: FunctionReference<"mutation", "internal">;
-		procedureSubmit: FunctionReference<"mutation", "internal">;
-		deliverableGet: FunctionReference<"query", "internal">;
-		deliverableList: FunctionReference<"query", "internal">;
-		deliverableCreate: FunctionReference<"mutation", "internal">;
-		deliverableUpdate: FunctionReference<"mutation", "internal">;
-		deliverableEvaluate: FunctionReference<"mutation", "internal">;
-		evaluationGet: FunctionReference<"query", "internal">;
-		evaluationList: FunctionReference<"query", "internal">;
-		evaluationStart: FunctionReference<"mutation", "internal">;
-		evaluationCancel: FunctionReference<"mutation", "internal">;
-		evaluationComplete: FunctionReference<"mutation", "internal">;
+		cardGet: FunctionReference<'query', 'internal'>;
+		cardFind: FunctionReference<'query', 'internal'>;
+		cardList: FunctionReference<'query', 'internal'>;
+		cardCreate: FunctionReference<'mutation', 'internal'>;
+		procedureGet: FunctionReference<'query', 'internal'>;
+		procedureList: FunctionReference<'query', 'internal'>;
+		procedureCreate: FunctionReference<'mutation', 'internal'>;
+		procedureUpdate: FunctionReference<'mutation', 'internal'>;
+		procedureRemove: FunctionReference<'mutation', 'internal'>;
+		procedureSubmit: FunctionReference<'mutation', 'internal'>;
+		deliverableGet: FunctionReference<'query', 'internal'>;
+		deliverableList: FunctionReference<'query', 'internal'>;
+		deliverableCreate: FunctionReference<'mutation', 'internal'>;
+		deliverableUpdate: FunctionReference<'mutation', 'internal'>;
+		deliverableEvaluate: FunctionReference<'mutation', 'internal'>;
+		evaluationGet: FunctionReference<'query', 'internal'>;
+		evaluationList: FunctionReference<'query', 'internal'>;
+		evaluationStart: FunctionReference<'mutation', 'internal'>;
+		evaluationCancel: FunctionReference<'mutation', 'internal'>;
+		evaluationComplete: FunctionReference<'mutation', 'internal'>;
 	};
 };
 
@@ -165,11 +165,11 @@ export type BridgeOptions<S extends string = string> = {
 
 function getTableName(subjectConfig: string | SubjectConfig | undefined): string | undefined {
 	if (!subjectConfig) return undefined;
-	return typeof subjectConfig === "string" ? subjectConfig : subjectConfig.table;
+	return typeof subjectConfig === 'string' ? subjectConfig : subjectConfig.table;
 }
 
 function getParents(subjectConfig: string | SubjectConfig | undefined) {
-	if (!subjectConfig || typeof subjectConfig === "string") return [];
+	if (!subjectConfig || typeof subjectConfig === 'string') return [];
 	return subjectConfig.parents ?? [];
 }
 
@@ -183,7 +183,7 @@ type DynamicTableQuery = {
 	query(table: string): {
 		withIndex(
 			name: string,
-			fn: (q: { eq(field: string, value: string): unknown }) => unknown,
+			fn: (q: { eq(field: string, value: string): unknown }) => unknown
 		): {
 			unique(): Promise<SubjectDocument | null>;
 		};
@@ -191,13 +191,13 @@ type DynamicTableQuery = {
 };
 
 function querySubjectTable(
-	db: GenericQueryCtx<GenericDataModel>["db"],
+	db: GenericQueryCtx<GenericDataModel>['db'],
 	tableName: string,
-	subjectId: string,
+	subjectId: string
 ): Promise<SubjectDocument | null> {
 	return (db as unknown as DynamicTableQuery)
 		.query(tableName)
-		.withIndex("by_uuid", q => q.eq("id", subjectId))
+		.withIndex('by_uuid', (q) => q.eq('id', subjectId))
 		.unique();
 }
 
@@ -207,7 +207,7 @@ function querySubjectTable(
 
 function createBridgeInstance<S extends string = string>(
 	component: BridgeComponentApi,
-	options?: BridgeOptions<S>,
+	options?: BridgeOptions<S>
 ) {
 	const callbacks = new Map<string, CallbackHandler>();
 	const subjects = options?.subjects;
@@ -220,7 +220,7 @@ function createBridgeInstance<S extends string = string>(
 	async function fetchSubjectDoc(
 		ctx: GenericQueryCtx<GenericDataModel>,
 		subject: Subject,
-		subjectId: string,
+		subjectId: string
 	): Promise<SubjectDocument | null> {
 		const subjectConfig = subjects?.[subject as S];
 		const tableName = getTableName(subjectConfig);
@@ -232,7 +232,7 @@ function createBridgeInstance<S extends string = string>(
 		const variables: Record<string, unknown> = {};
 		if (Array.isArray(doc.attributes)) {
 			for (const attr of doc.attributes) {
-				if (attr && typeof attr === "object" && "slug" in attr && "value" in attr) {
+				if (attr && typeof attr === 'object' && 'slug' in attr && 'value' in attr) {
 					variables[attr.slug] = attr.value;
 				}
 			}
@@ -244,7 +244,7 @@ function createBridgeInstance<S extends string = string>(
 		ctx: GenericQueryCtx<GenericDataModel>,
 		subject: string,
 		subjectId: string,
-		visited = new Set<string>(),
+		visited = new Set<string>()
 	): Promise<{
 		variables: Record<string, unknown>;
 		subjects: Record<string, Record<string, unknown>>;
@@ -296,7 +296,7 @@ function createBridgeInstance<S extends string = string>(
 		resolve: async (
 			ctx: GenericQueryCtx<GenericDataModel>,
 			subject: S,
-			subjectId: string,
+			subjectId: string
 		): Promise<Record<string, unknown>> => {
 			const doc = await fetchSubjectDoc(ctx, subject, subjectId);
 			if (!doc) return {};
@@ -305,7 +305,7 @@ function createBridgeInstance<S extends string = string>(
 
 		aggregate: async (
 			ctx: GenericQueryCtx<GenericDataModel>,
-			input: { subject: S; subjectId: string },
+			input: { subject: S; subjectId: string }
 		): Promise<AggregatedContext> => {
 			const result = await aggregateSubject(ctx, input.subject, input.subjectId);
 			return {
@@ -326,17 +326,17 @@ function createBridgeInstance<S extends string = string>(
 
 		submit: async (
 			ctx: GenericMutationCtx<GenericDataModel>,
-			submission: Submission,
+			submission: Submission
 		): Promise<SubmissionResult> => {
 			return ctx.runMutation(
 				component.public.procedureSubmit,
-				submission,
+				submission
 			) as Promise<SubmissionResult>;
 		},
 
 		evaluate: async (
 			ctx: GenericMutationCtx<GenericDataModel>,
-			trigger: EvaluateTrigger,
+			trigger: EvaluateTrigger
 		): Promise<DeliverableResult[]> => {
 			let { variables } = trigger;
 
@@ -354,7 +354,7 @@ function createBridgeInstance<S extends string = string>(
 		execute: async (
 			deliverable: Deliverable,
 			operation: Operation,
-			context: ExecutionContext,
+			context: ExecutionContext
 		): Promise<ExecutionResult> => {
 			const opConfig = deliverable.operations[operation];
 			if (!opConfig) {
@@ -372,7 +372,7 @@ function createBridgeInstance<S extends string = string>(
 				};
 			}
 
-			const callbackType = callbackAction.split(":")[0] || "default";
+			const callbackType = callbackAction.split(':')[0] || 'default';
 			const handler = callbacks.get(callbackType);
 
 			if (!handler) {
@@ -387,7 +387,7 @@ function createBridgeInstance<S extends string = string>(
 			} catch (error) {
 				return {
 					success: false,
-					error: error instanceof Error ? error.message : "Unknown error",
+					error: error instanceof Error ? error.message : 'Unknown error',
 				};
 			}
 		},
