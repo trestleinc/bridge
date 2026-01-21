@@ -25,13 +25,19 @@ Single package with exports:
 ## Development Commands
 
 ```bash
-# Build (includes linting and type checking via tsdown)
-bun run build        # Runs oxfmt && oxlint --fix && tsdown (outputs to dist/)
-bun run clean        # Remove dist/
+# Build
+pnpm run build       # Runs tsdown (outputs to dist/)
+pnpm run clean       # Remove dist/
+
+# Linting & Formatting
+pnpm run lint        # Check for lint errors
+pnpm run lint:fix    # Auto-fix lint errors
+pnpm run format      # Format code with Prettier
+pnpm run format:check # Check formatting
 
 # Testing
-bun test             # Run all tests with Vitest
-bun test <path>      # Run specific test file
+pnpm test            # Run all tests with Vitest
+pnpm test <path>     # Run specific test file
 ```
 
 ## Architecture
@@ -302,7 +308,8 @@ try {
 - **Effect** for dependency injection (in dependencies)
 - **Convex** for backend (cloud database + functions)
 - **tsdown** for building
-- **oxlint/oxfmt** for linting and formatting (fast, zero-config)
+- **ESLint** for linting (with @convex-dev/eslint-plugin)
+- **Prettier** for formatting
 - **LogTape** for logging (avoid console.\*)
 
 ## Naming Conventions
@@ -313,7 +320,7 @@ try {
 
 ## Important Notes
 
-- **bun for commands** - Use `bun run` for all commands
+- **pnpm for commands** - Use `pnpm run` for all commands
 - **Organization-scoped** - All data is scoped by `organizationId`
 - **Subject bindings** - Bind subjects to host tables for auto-resolution
 - **Authorization at wrapper level** - Component hooks receive generic context types; use wrapper functions for auth
