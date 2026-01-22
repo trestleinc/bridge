@@ -67,6 +67,7 @@
 		"build": "tsdown",
 		"dev": "tsdown --watch",
 		"clean": "rm -rf dist",
+		"codegen": "convex codegen --component-dir ./src/component",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write .",
